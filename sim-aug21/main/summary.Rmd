@@ -1,0 +1,290 @@
+---
+title: "Summary of 0707 binarypinc main"
+output: pdf_document
+---
+
+# Setup
+
+$$
+\textrm{logit}(Pr(Y_i=1|Z,X)) = \beta_0 + \alpha_{Za[i]} + \alpha_{Zb[i]} + \alpha_{Zc[i]} + \alpha_{X[i]}
+$$
+\begin{align*}
+\alpha_{Za[i]}&=(1.37, -0.56, 0.36, 0.63,0.40)\\
+\alpha_{Zb[i]}&=(-0.11,1.51,-0.09,2.02,-0.06)\\
+\alpha_{Zc[i]}&=(0,0.24)\\
+\alpha_{X[i]} &= (0,-1.3)
+\end{align*}
+
+$$
+logit(P(X_i=1|Z)) = \Gamma_0 + \gamma_{Za[i]} + \gamma_{Zb[i]} + \gamma_{Zc[i]} + \gamma_{Za[i],Zc[i]}+\gamma_{Zb[i],Zc[i]}
+$$
+
+\begin{align*}
+\Gamma_0 &= -0.5\\
+\gamma_{Za[i]}&=(1.7,0.25,0.2,-0.75,-1.7)\\
+\gamma_{Zb[i]}&=(2.3, 1.5, 0.15, 0.2, 0.9)\\
+\gamma_{Zc[i]}&=(0,-1)\\
+\gamma_{Za[i],Zc[i]} &= (0,0,0,0,0)\\
+\gamma_{Zb[i],Zc[i]} &= (0,0,0,0,0)
+\end{align*}
+
+## Subgroup definition
+
+There are 4 subgroups. The 1st subgroup includes units from 20 of the cells in the lower 40th percentile of inclusion probabilities, the second contains those from the 20th and 60th percentiles, the third from the 40th and 80th, and the fourth from the 60th and 100th. Cell subgroup membership was prespecified via random draw while maintaining a 1:3 (or 3:1) composition of cell membership in $X=0$ to that in $X=1$ to ensure that we are considering circumstances in which classic MRP fails to give adequate inference.
+
+```{r setup, include=FALSE}
+library(ggplot2)
+wmrp <- read.csv("res_wmrp.csv",row.names=1)[,1:6]
+mrp2 <- read.csv("res_mrp2.csv",row.names=1)[,1:6]
+mmrp <- read.csv("res_mmrp.csv",row.names=1)[,1:6]
+mrp <- read.csv("res_mrp.csv", row.names=1)[,1:6]
+wfpbby <- read.csv("res_wfpbby.csv",row.names=1)
+source("genPop_hixz_hixy.R")
+  cellmeanbias <- read.csv("cellmeanbias_wmrp.csv", header = T, row.names = 1) %>% unlist %>% as.vector
+      cellmeanse <- read.csv("cellmeanse_wmrp.csv", header = T, row.names = 1) %>% unlist %>% as.vector
+
+  wmrp_njbias <- read.csv("Njbias_wmrp.csv", header = T, row.names = 1) %>% unlist %>% as.vector
+  mmrp_njbias <- read.csv("Njbias_mmrp.csv", header = T, row.names = 1)%>% unlist %>% as.vector
+  mrp2_njbias <- read.csv("Njbias_mrp2.csv", header = T, row.names = 1)%>% unlist %>% as.vector
+  wmrp_njse <- read.csv("Njse_wmrp.csv", header = T, row.names = 1)%>% unlist %>% as.vector
+  mmrp_njse <- read.csv("Njse_mmrp.csv", header = T, row.names = 1)%>% unlist %>% as.vector
+  mrp2_njse <- read.csv("Njse_mrp2.csv", header = T, row.names = 1)%>% unlist %>% as.vector
+  wmrp_njrmse <- read.csv("Njrmse_wmrp.csv", header = T, row.names = 1)%>% unlist %>% as.vector
+  mmrp_njrmse <- read.csv("Njrmse_mmrp.csv", header = T, row.names = 1)%>% unlist %>% as.vector
+  mrp2_njrmse <- read.csv("Njrmse_mrp2.csv", header = T, row.names = 1)%>% unlist %>% as.vector
+  wmrp_njcov <- read.csv("Njcov_wmrp.csv", header = T, row.names = 1)%>% unlist %>% as.vector
+  mmrp_njcov <- read.csv("Njcov_mmrp.csv", header = T, row.names = 1)%>% unlist %>% as.vector
+  mrp2_njcov <- read.csv("Njcov_mrp2.csv", header = T, row.names = 1)%>% unlist %>% as.vector
+# temp <- df %>% group_by(subgroup) %>% summarise(subgrpvar = mean(Y)*(1-mean(Y)))
+# subgrpsd <- sqrt(temp$subgrpvar)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Result tables
+```{r,include=FALSE}
+# rmse <- rbind(wfpbby[1,], wmrp[1,], mmrp[1,], mrp2[1,], mrp[1,])
+#   rmse <- rmse[,c(1,6,5,4,3,2)]
+#   rownames(rmse) <- c("WFPBB", "WFPBB-MRP", "Multinomial-MRP", "Two-Stage MRP", "Classical MRP")
+# bias <- rbind(wfpbby[2,], wmrp[2,], mmrp[2,], mrp2[2,],mrp[2,])
+#   bias <- bias[,c(1,6,5,4,3,2)]
+#   rownames(bias) <- c("WFPBB", "WFPBB-MRP", "Multinomial-MRP", "Two-Stage MRP", "Classical MRP")
+# SE <- rbind(wfpbby[3,], wmrp[3,], mmrp[3,], mrp2[3,],mrp[3,])
+#   SE <- SE[,c(1,6,5,4,3,2)]
+#   rownames(SE) <- c("WFPBB", "WFPBB-MRP", "Multinomial-MRP", "Two-Stage MRP", "Classical MRP")
+# CI_length <- rbind(wfpbby[5,], wmrp[4,], mmrp[4,], mrp2[4,],mrp[4,])
+#   CI_length <- CI_length[,c(1,6,5,4,3,2)]
+#   rownames(CI_length)<- c("WFPBB", "WFPBB-MRP", "Multinomial-MRP", "Two-Stage MRP", "Classical MRP")
+# coverage_rate <- rbind(wfpbby[7,], wmrp[5,], mmrp[5,], mrp2[5,], mrp[5,])
+#   coverage_rate <- coverage_rate[,c(1,6,5,4,3,2)]
+#   rownames(coverage_rate) <- c("WFPBB", "WFPBB-MRP", "Multinomial-MRP", "Two-Stage MRP", "Classical MRP")
+#   # Dummy data
+# method <- c( "WFPBB", "WFPBB-MRP", "Multinomial-MRP","Two-Stage-MRP", "Classical MRP")
+# inference <- c("Overall","Group 5", "Group 4", "Group 3", "Group 2",  "Group 1")
+rmse <- rbind(wfpbby[1,], wmrp[1,], mmrp[1,], mrp2[1,])
+  rmse <- rmse[,c(1,5,4,3,2)]
+  rownames(rmse) <- c("WFPBB", "WFPBB-MRP", "Multinomial-MRP", "Two-Stage MRP")
+bias <- rbind(wfpbby[2,], wmrp[2,], mmrp[2,], mrp2[2,])
+  bias <- bias[,c(1,5,4,3,2)]
+  rownames(bias) <- c("WFPBB", "WFPBB-MRP", "Multinomial-MRP", "Two-Stage MRP")
+SE <- rbind(wfpbby[3,], wmrp[3,], mmrp[3,], mrp2[3,])
+  SE <- SE[,c(1,5,4,3,2)]
+  rownames(SE) <- c("WFPBB", "WFPBB-MRP", "Multinomial-MRP", "Two-Stage MRP")
+CI_length <- rbind(wfpbby[5,], wmrp[4,], mmrp[4,], mrp2[4,])
+  CI_length <- CI_length[,c(1,5,4,3,2)]
+  rownames(CI_length)<- c("WFPBB", "WFPBB-MRP", "Multinomial-MRP", "Two-Stage MRP")
+coverage_rate <- rbind(wfpbby[7,], wmrp[5,], mmrp[5,], mrp2[5,])
+  coverage_rate <- coverage_rate[,c(1,5,4,3,2)]
+  rownames(coverage_rate) <- c("WFPBB", "WFPBB-MRP", "Multinomial-MRP", "Two-Stage MRP")
+  # Dummy data
+method <- c( "WFPBB", "WFPBB-MRP", "Multinomial-MRP","Two-Stage-MRP")
+inference <- c("Overall","Group 4", "Group 3", "Group 2",  "Group 1")
+
+data <- expand.grid(Method=method, Inference=inference)
+```
+
+```{r}
+# rMSE
+round(rmse,3)
+
+# bias
+round(bias,3)
+
+# standardized mean difference;
+#  bias / pop subgroup std dev. of Y
+# round(bias/subgrpsd,3)
+
+# standard error of estimator
+round(SE,3)
+
+# CI length
+round(CI_length,3)
+
+# coverage rate
+round(coverage_rate,3)
+```
+
+
+# Heatmap of overall summaries
+
+Heatmaps are ordered by inclusion probability; lowest at the bottom left, highest at the top right.
+
+```{r}
+#====== Overall summaries =======
+## Use Bias, rMSE, coverage rate for loxz/hixy (most difference observed)
+#- rMSE
+  # start from overall WFPBB -> overall W-MRP -> overall M-MRP... -> group 5 WFPBB -> group 5 W-MRP...
+  data$Z <- as.numeric(as.matrix(rmse))
+  ggplot(data, aes(Method, Inference, fill= Z)) + 
+    geom_tile() + labs(title = "rMSE for MAIN case", fill = "rMSE")+scale_fill_continuous(high = "#28629c", low = "#56B1F7")
+
+#- bias
+  ## hi xz / hi xy
+  data$Z <- as.numeric(as.matrix(bias))
+  ggplot(data, aes(Method, Inference, fill= abs(Z))) + 
+    geom_tile() + 
+    labs(title = "Absolute bias for MAIN case", fill = "bias")+scale_fill_continuous(high = "#28629c", low = "#56B1F7")
+
+#- coverage
+  ## hi xz / hi xy
+  data$Z <- as.numeric(as.matrix(coverage_rate))
+  ggplot(data, aes(Method, Inference, fill= Z)) + 
+    geom_tile()+ labs(title = "95% Interval coverage for MAIN case", fill = "coverage")+scale_fill_continuous(high = "#28629c", low = "#56B1F7")
+
+  #- CI length
+  ## hi xz / hi xy
+  data$Z <- as.numeric(as.matrix(CI_length))
+  ggplot(data, aes(Method, Inference, fill= Z)) + 
+    geom_tile()+ labs(title = "95% Average confidence interval length for MAIN case", fill = "length")+scale_fill_continuous(high = "#28629c", low = "#56B1F7")
+  
+
+```
+
+# Nj summaries
+```{r}
+# ordered_cellcts_hihi <- 1:100
+## == Cellmean bias ==
+  x <- y <- factor(1:10)
+  data <- expand.grid(X=x,Y=y)
+  data$Z <- c(abs(cellmeanbias[ordered_cellcts_hihi]))
+    ggplot(data, aes(x=X,y=Y, fill= Z)) + 
+    geom_tile()+
+    theme(axis.ticks.y = element_blank()) +
+    theme(axis.text.y = element_blank()) +
+    theme(axis.ticks.x = element_blank()) +
+    theme(axis.text.x = element_blank()) +
+    theme(axis.title.x = element_blank()) +
+    theme(axis.title.y = element_blank()) +
+    labs(title = "Absolute bias of estimated population cell means", fill = "bias")+scale_fill_continuous(high = "#28629c", low = "#56B1F7", limits=c(0,0.9))
+## == Cellmean SE ==
+  x <- y <- factor(1:10)
+  data <- expand.grid(X=x,Y=y)
+  data$Z <- c(abs(cellmeanse[ordered_cellcts_hihi]))
+    ggplot(data, aes(x=X,y=Y, fill= Z)) + 
+    geom_tile()+
+    theme(axis.ticks.y = element_blank()) +
+    theme(axis.text.y = element_blank()) +
+    theme(axis.ticks.x = element_blank()) +
+    theme(axis.text.x = element_blank()) +
+    theme(axis.title.x = element_blank()) +
+    theme(axis.title.y = element_blank()) +
+    labs(title = "SE of estimated population cell means", fill = "SE")+scale_fill_continuous(high = "#28629c", low = "#56B1F7", limits=c(0,max(cellmeanse)+0.1))
+
+  ##======= Nj Bias =====
+  #--- faceted plots
+  x <- y <- factor(1:10)
+  method <- c("WFPBB-MRP", "Multinomial-MRP", "Two-Stage-MRP")
+  data <- expand.grid(X=x,Y=y, Method = method)
+  wmdat <- wmrp_njbias %>% abs()
+  m2dat <- mrp2_njbias%>% abs()
+  mmdat <- mmrp_njbias%>% abs()
+  wmdat <- c(wmdat[ordered_cellcts_hihi])
+  m2dat <- c(m2dat[ordered_cellcts_hihi])
+  mmdat <- c(mmdat[ordered_cellcts_hihi])
+  data$Z <- c(wmdat, mmdat, m2dat)
+  ggplot(data, aes(x=X,y=Y, fill= Z)) + 
+    geom_tile()+
+    theme(axis.ticks.y = element_blank()) +
+    theme(axis.text.y = element_blank()) +
+    theme(axis.ticks.x = element_blank()) +
+    theme(axis.text.x = element_blank()) +
+    theme(axis.title.x = element_blank()) +
+    theme(axis.title.y = element_blank()) +
+    labs(title = "Absolute bias of estimated population cell count, MAIN case", fill = "bias")+scale_fill_continuous(high = "#28629c", low = "#56B1F7")+facet_grid(. ~ Method)
+  
+  ##===== Nj rMSE ======
+  
+  #-- faceted plots  
+  x <- y <- factor(1:10)
+  method <- c("WFPBB-MRP", "Multinomial-MRP", "Two-Stage-MRP")
+  data <- expand.grid(X=x,Y=y, Method = method)
+  wmdat <- wmrp_njrmse
+  mmdat <- mmrp_njrmse
+  m2dat <- mrp2_njrmse
+  wmdat <- c(wmdat[ordered_cellcts_hihi])
+  m2dat <- c(m2dat[ordered_cellcts_hihi])
+  mmdat <- c(mmdat[ordered_cellcts_hihi])
+  data$Z <- c(wmdat, mmdat, m2dat)
+  ggplot(data, aes(x=X,y=Y, fill= Z)) + 
+    geom_tile()+
+    theme(axis.ticks.y = element_blank()) +
+    theme(axis.text.y = element_blank()) +
+    theme(axis.ticks.x = element_blank()) +
+    theme(axis.text.x = element_blank()) +
+    theme(axis.title.x = element_blank()) +
+    theme(axis.title.y = element_blank()) +
+    labs(title = "rMSE of estimated population cell count, MAIN case", fill = "rMSE")+
+    scale_fill_continuous(high = "#28629c", low = "#56B1F7")+
+    facet_grid(. ~ Method)
+  
+  ##===== Nj SE ====
+  #-- faceted plots  
+  x <- y <- factor(1:10)
+  method <- c("WFPBB-MRP", "Multinomial-MRP", "Two-Stage-MRP")
+  data <- expand.grid(X=x,Y=y, Method = method)
+  wmdat <- wmrp_njse
+  mmdat <- mmrp_njse
+  m2dat <- mrp2_njse
+  wmdat <- c(wmdat[ordered_cellcts_hihi])
+  m2dat <- c(m2dat[ordered_cellcts_hihi])
+  mmdat <- c(mmdat[ordered_cellcts_hihi])
+  data$Z <- c(wmdat, mmdat, m2dat)
+  ggplot(data, aes(x=X,y=Y, fill= Z)) + 
+    geom_tile()+
+    theme(axis.ticks.y = element_blank()) +
+    theme(axis.text.y = element_blank()) +
+    theme(axis.ticks.x = element_blank()) +
+    theme(axis.text.x = element_blank()) +
+    theme(axis.title.x = element_blank()) +
+    theme(axis.title.y = element_blank()) +
+    labs(title = "Standard error of estimated population cell count, MAIN case", fill = "SE")+
+    scale_fill_continuous(high = "#28629c", low = "#56B1F7")+
+    facet_grid(. ~ Method)
+  
+  #==== Nj coverage rates======
+  
+    #-- faceted plots  
+  x <- y <- factor(1:10)
+  method <- c("WFPBB-MRP", "Multinomial-MRP", "Two-Stage-MRP")
+  data <- expand.grid(X=x,Y=y, Method = method)
+  wmdat <- wmrp_njcov
+  mmdat <- mmrp_njcov
+  m2dat <- mrp2_njcov
+  wmdat <- c(wmdat[ordered_cellcts_hihi])
+  m2dat <- c(m2dat[ordered_cellcts_hihi])
+  mmdat <- c(mmdat[ordered_cellcts_hihi])
+  data$Z <- c(wmdat, mmdat, m2dat)
+  ggplot(data, aes(x=X,y=Y, fill= Z)) + 
+    geom_tile()+
+    theme(axis.ticks.y = element_blank()) +
+    theme(axis.text.y = element_blank()) +
+    theme(axis.ticks.x = element_blank()) +
+    theme(axis.text.x = element_blank()) +
+    theme(axis.title.x = element_blank()) +
+    theme(axis.title.y = element_blank()) +
+    labs(title = "95% interval coverage rate of estimated population cell count, MAIN case", fill = "coverage")+
+    scale_fill_continuous(high = "#28629c", low = "#56B1F7")+
+    facet_grid(. ~ Method)
+
+```
+
