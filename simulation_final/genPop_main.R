@@ -103,20 +103,18 @@ bxzb <- c(2.3, 1.5, 0.15, 0.2, 0.9)
 bxzc <- c(0,-1)
 # bxzac = c(0, rnorm(acats-1) - 0.2) 
 # bxzbc = c(0, rnorm(bcats-1) + 0.2) 
-bxzac = c(0, -0.6, 0.5, 0.35, -0.4) 
-bxzbc = c(0, 1.7, 0.1, 2, -0.75)
+# bxzac = c(0, -0.6, 0.5, 0.35, -0.4) 
+# bxzbc = c(0, 1.7, 0.1, 2, -0.75)
 
-# bxzac <- rep(0, acats) #MAIN
-# bxzbc <- rep(0,bcats)  #MAIN
+bxzac <- rep(0, acats) #MAIN
+bxzbc <- rep(0,bcats)  #MAIN
 
 df <-
   df %>% 
   left_join(tempdf)
 df$pxz <-  expit(bxz0+bxza[df$Za_categorical] +
                    bxzb[df$Zb_categorical] +
-                   bxzc[df$Zc_categorical] +
-                   bxzac[df$Za_categorical]*as.numeric(df$Zc_categorical==2)+
-                   bxzbc[df$Zb_categorical]*as.numeric(df$Zc_categorical==2))
+                   bxzc[df$Zc_categorical])
 df$X.0 = rbinom(N, 1, 1-df$pxz)
 df$X.1 = as.numeric(df$X.0 != 1)
 
@@ -219,7 +217,6 @@ cmat5[group5] <- 1
 # }
 
 
-# ordered_cellcts_hihi <- order(poptbl$sampct)
 # poptbl <- df %>%
 #   group_by(J_cell,subgroup) %>%
 #   summarise(
@@ -264,4 +261,18 @@ df <- df %>%
     Z_categorical,Za_categorical,Zb_categorical,Zc_categorical,pxz,
     p_include, X.1, Y, J_cell, zcts, Nj
   )
-summary(glm(X.1 ~ Zb_categorical*Zc_categorical + Za_categorical*Zc_categorical, data=df, family = "binomial"))
+# summary(glm(X.1 ~ Zb_categorical*Zc_categorical + Za_categorical*Zc_categorical, data=df, family = "binomial"))
+# mod1 <- glm(X.1 ~ Zb_categorical*Zc_categorical + Za_categorical*Zc_categorical, data=samp, family = "binomial")
+# pred1 <- predict.glm(mod1,newdata=df,type="response")
+# mod2 <- glm(X.1 ~ Za_categorical + Zb_categorical + Zc_categorical, data=samp, family = "binomial")
+# pred2 <- predict.glm(mod2,newdata=df, type="response")
+# pROC::roc(df$X.1~pred1, data=df)
+# pROC::roc(df$X.1~pred2, data=df)
+# 
+# 
+# mod1 <- glm(X.1 ~ Zb_categorical*Zc_categorical + Za_categorical*Zc_categorical, data=df, family = "binomial")
+# pred1 <- predict.glm(mod1,newdata=df,type="response")
+# mod2 <- glm(X.1 ~ Za_categorical + Zb_categorical + Zc_categorical, data=df, family = "binomial")
+# pred2 <- predict.glm(mod2,newdata=df, type="response")
+# pROC::roc(df$X.1~pred1, data=df)
+# pROC::roc(df$X.1~pred2, data=df)

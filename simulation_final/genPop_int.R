@@ -114,7 +114,9 @@ df <-
   left_join(tempdf)
 df$pxz <-  expit(bxz0+bxza[df$Za_categorical] +
                    bxzb[df$Zb_categorical] +
-                   bxzc[df$Zc_categorical])
+                   bxzc[df$Zc_categorical] +
+                   bxzac[df$Za_categorical]*as.numeric(df$Zc_categorical==2)+
+                   bxzbc[df$Zb_categorical]*as.numeric(df$Zc_categorical==2))
 df$X.0 = rbinom(N, 1, 1-df$pxz)
 df$X.1 = as.numeric(df$X.0 != 1)
 
@@ -217,6 +219,7 @@ cmat5[group5] <- 1
 # }
 
 
+# ordered_cellcts_hihi <- order(poptbl$sampct)
 # poptbl <- df %>%
 #   group_by(J_cell,subgroup) %>%
 #   summarise(
@@ -262,3 +265,17 @@ df <- df %>%
     p_include, X.1, Y, J_cell, zcts, Nj
   )
 summary(glm(X.1 ~ Zb_categorical*Zc_categorical + Za_categorical*Zc_categorical, data=df, family = "binomial"))
+# mod1 <- glm(X.1 ~ Zb_categorical*Zc_categorical + Za_categorical*Zc_categorical, data=samp, family = "binomial")
+# pred1 <- predict.glm(mod1,newdata=df,type="response")
+# mod2 <- glm(X.1 ~ Za_categorical + Zb_categorical + Zc_categorical, data=samp, family = "binomial")
+# pred2 <- predict.glm(mod2,newdata=df, type="response")
+# pROC::roc(df$X.1~pred1, data=df)
+# pROC::roc(df$X.1~pred2, data=df)
+# 
+# 
+# mod1 <- glm(X.1 ~ Zb_categorical*Zc_categorical + Za_categorical*Zc_categorical, data=df, family = "binomial")
+# pred1 <- predict.glm(mod1,newdata=df,type="response")
+# mod2 <- glm(X.1 ~ Za_categorical + Zb_categorical + Zc_categorical, data=df, family = "binomial")
+# pred2 <- predict.glm(mod2,newdata=df, type="response")
+# pROC::roc(df$X.1~pred1, data=df)
+# pROC::roc(df$X.1~pred2, data=df)
