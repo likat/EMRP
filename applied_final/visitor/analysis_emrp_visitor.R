@@ -23,7 +23,7 @@ normalize <- function(vec){
 }
 resmatfun <- function(x, id=seq(1,ncol(x))){
   estx <- colMeans(x,na.rm=T)
-  varx <- apply(x,2,var,na.rm=T)*(1+1/5000)
+  varx <- apply(x,2,var,na.rm=T)
   CIlower <- apply(x,2,quantile,0.025,na.rm=T)
   CIupper <- apply(x,2,quantile,0.975,na.rm=T)
   resmat <- data.frame(
@@ -37,14 +37,11 @@ resmatfun <- function(x, id=seq(1,ncol(x))){
 }
 
 #-- source cleaned data and group indices
-# setwd("~/Desktop/fwbb_mrp/EMRP PAPER BACKUP/realdata-output/FINALCODE_applications/")
-source("BASELINE.R")
+source("BASELINE_visitor.R")
 
 # initialize containers for results
 sim <- 5000
 staniters = 10000
-# sim <- 1000
-# staniters = 2000
 Tfact <- 30
 F_draw = 20
 M <- length(unique(samp$sampled_x1_label))
@@ -106,18 +103,8 @@ stanfitNq <- stan(file = "mrp2_Nq_BASELINE.stan",
                            "J_stan", "n", "y", "xj",
                            "agroup", "bgroup", "cgroup", "dgroup", "egroup", "xgroup",
                            "abgroup", "bcgroup","cdgroup","dxgroup"),
-                  iter=staniters,
-                  #pars = c("propmk"),
-                  warmup=staniters-sim/4,control=list(adapt_delta=0.99, max_treedepth=13),chains=4)
-# fit_abortion_noncensus <- rstanarm::stan_glmer(svefreq2 ~ (1 | age3) + sex2 + (1 | race3) +
-#                                                  (1 | educat4)  + (1 | povgap4) + (1 | age3:sex2) +
-#                                                  (1 | sex2:race3) + (1 | race3:educat4),
-#                                                family = binomial(link = "logit"),
-#                                                data = samp,prior = cauchy(0, 1, autoscale = TRUE),
-#                                                prior_covariance = decov(scale = 0.50),
-#                                                adapt_delta = 0.99,
-#                                                seed = 1010,
-#                                                chains=1)
+                  iter=staniters,pars = c("propmk"),warmup=staniters-sim/4,control=list(adapt_delta=0.99, max_treedepth=13),chains=4)
+
 nq_pars <- 
   rstan::extract(stanfitNq,permuted = TRUE, inc_warmup = FALSE,include = TRUE) 
 
@@ -156,7 +143,6 @@ abgroup <- as.numeric(grptbl$abcat)
 bcgroup <- as.numeric(grptbl$bccat)
 cdgroup <- as.numeric(grptbl$cdcat)
 dxgroup <- as.numeric(grptbl$dfcat)
-# sampgroup <- as.numeric(grptbl$samptype) -1 # for testing samptype sig
 cell_label <- samp$sampJ
 grp1id <- grp1id[sort(unique(samp$J_cell))]
 grp2id <- grp2id[sort(unique(samp$J_cell))]
@@ -165,9 +151,7 @@ grp4id <- grp4id[sort(unique(samp$J_cell))]
 grp5id <- grp5id[sort(unique(samp$J_cell))]
 grp6id <- grp6id[sort(unique(samp$J_cell))]
 grp7id <- grp7id[sort(unique(samp$J_cell))]
-# xsampgroup <- as.numeric(grptbl$samptype)-1 # for testing samptype sig
 
-# age:sex, education:visit
 stanfit <- stan(file = "outcome_model_BASELINE2.stan",
                 data = c("Ma", "Mb", "Mc", "Md", "Me", "L", "Mab", "Mbc","Mcd","Mdx",
                          "J_stan", "n", "y", 
@@ -175,40 +159,23 @@ stanfit <- stan(file = "outcome_model_BASELINE2.stan",
                          "abgroup", "bcgroup","cdgroup","dxgroup","cell_label"),
                 iter=staniters,
                 pars = c("cellmean","y_sim", "p", "beta","alphaa","alphac","alphad","alphae",
-                        "alphadx",
+                         "alphadx",
                          "sigma_a","sigma_c","sigma_d","sigma_e","sigma_dx"),#"log_lik"),
-                # pars = c("cellmean","y_sim", "beta","alphaa","alphac","alphad","alphae",
-                #          "alphaab","alphabc", "alphacd","alphadx",
-                #          "sigma_a","sigma_c","sigma_d","sigma_e","sigma_ab","sigma_bc","sigma_cd","sigma_dx"),#"log_lik"),
                 warmup=staniters-sim/4,control=list(adapt_delta=0.99),chains=4)
-# loo::extract_log_lik(stanfit,merge_chains=F)
-# extract estimates of cell means from the stan model
 stanpars <-
   rstan::extract(object=stanfit, permuted = TRUE)#, inc_warmup = FALSE,include = TRUE)
 cellmeans_stan <- stanpars$cellmean
-# ysim <- stanpars$y_sim
-# predtheta <- data.frame(predtheta = stanpars$theta_rep)
 write.csv(stanpars$y_sim, "ysimraw.csv")
-# write.csv(stanpars$theta_rep, "predthetaraw.csv")
 write.csv(stanpars$p, "probraw.csv")
-write.csv(stanpars$beta[,1], "betaintraw.csv")
-write.csv(stanpars$beta[,2], "betasexraw.csv")
 write.csv(stanpars$beta[,3], "betavisitraw.csv")
 write.csv(stanpars$alphaa, "araw.csv")
 write.csv(stanpars$alphac, "craw.csv")
 write.csv(stanpars$alphad, "draw.csv")
 write.csv(stanpars$alphae, "aeraw.csv")
-# write.csv(stanpars$alphaab, "abraw.csv")
-# write.csv(stanpars$alphabc, "bcraw.csv")
-# write.csv(stanpars$alphacd, "cdraw.csv")
-write.csv(stanpars$alphadx, "dxraw.csv")
 write.csv(stanpars$sigma_a, "sigaraw.csv")
 write.csv(stanpars$sigma_c, "sigcraw.csv")
 write.csv(stanpars$sigma_d, "sigdraw.csv")
 write.csv(stanpars$sigma_e, "sigeraw.csv")
-# write.csv(stanpars$sigma_ab, "sigabraw.csv")
-# write.csv(stanpars$sigma_bc, "sigbcraw.csv")
-# write.csv(stanpars$sigma_cd, "sigcdraw.csv")
 write.csv(stanpars$sigma_dx, "sigdxraw.csv")
 
 #===== (2) Estimate Nj via WFPBB=====
@@ -219,12 +186,7 @@ for(s in 1:sim){
   bootstrap<-BayesianBootstrap(c(1:n),1)
   resample<-rmultinom(1,n,bootstrap)
   
-  # wts_new <- samp$wts * resample
-  # wts_new <- N*normalize(wts_new[wts_new!=0])
-  # resampind <- (1:n)[resample!=0]
-  # boot_cats <- sort(unique(samp$J_cell[resampind]))
-  # bootsamp_size <- length(resampind)
-  
+
   bootind <- rep(1:n, resample)
   bootdf <- samp[bootind,] %>% dplyr::select(J_cell, wts)
   boottbl <- bootdf %>%

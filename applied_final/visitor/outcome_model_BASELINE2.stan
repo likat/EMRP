@@ -27,23 +27,16 @@ data{
 
 parameters{
   vector[3] beta; //int, sex,svefreq
-  // vector[4] beta; //int, sex, (samptype),svefreq
   vector[Ma] az;
   vector[Mc] cz;
   vector[Md] dz;
   vector[Me] ez;
-  // vector[Mab] abz;
-  // vector[Mbc] bcz;
-  // vector[Mcd] cdz;
   vector[Mdx] dxz;
   real<lower=0> sigma_a; //sd of A main effect
   real<lower=0> sigma_c; //sd of C main effect
   real<lower=0> sigma_d; //sd of D main effect
   real<lower=0> sigma_e; //sd of E main effect
-  // real<lower=0> sigma_ab; //sd of age:sex interaction
-  // real<lower=0> sigma_bc;
-  // real<lower=0> sigma_cd;
-  real<lower=0> sigma_dx; //sd of education:visit interaction
+real<lower=0> sigma_dx; //sd of education:visit interaction
 }
 
 transformed parameters{
@@ -51,9 +44,6 @@ transformed parameters{
   vector[Mc] alphac= cz*sigma_c; 
   vector[Md] alphad= dz*sigma_d; 
   vector[Me] alphae= ez*sigma_e;
-  // vector[Mab] alphaab= abz*sigma_ab; 
-  // vector[Mbc] alphabc= bcz*sigma_bc; 
-  // vector[Mcd] alphacd= cdz*sigma_cd; 
   vector[Mdx] alphadx= dxz*sigma_dx;
  vector[J_stan] cellmean =  inv_logit(beta[1] + beta[2]*bgroup + beta[3]*xgroup+ alphaa[agroup] + alphac[cgroup] + alphad[dgroup]+ alphae[egroup] + alphadx[dxgroup]);
 }
@@ -63,22 +53,12 @@ model{
   cz~ std_normal();
   dz~ std_normal();
   ez~ std_normal();
-  // abz ~ std_normal();
-  // bcz ~ std_normal();
-  // cdz ~ std_normal();
   dxz ~ std_normal();
-  // aez~ std_normal();
   sigma_a ~ cauchy(0,1);
   sigma_c ~ cauchy(0,1);
   sigma_d ~ cauchy(0,1);
   sigma_e ~ cauchy(0,1);
-  // sigma_ab ~ cauchy(0,1);
-  // sigma_bc ~ cauchy(0,1);
-  // sigma_cd ~ cauchy(0,1);
   sigma_dx ~ cauchy(0,1);
-  // sigma_ae ~ cauchy(0,1);
-  //sigmay ~  cauchy(0,1);
-  //y ~ bernoulli(p);
   y ~ bernoulli(cellmean[cell_label]);
 }
 
@@ -86,7 +66,6 @@ generated quantities {
   vector[n] p;
   int y_sim[n];
   vector[n] log_lik;
-  // use current estimate of theta to generate new sample
   for (j in 1:n){
     y_sim[j] = bernoulli_rng(cellmean[cell_label[j]]);
     }
@@ -96,5 +75,4 @@ generated quantities {
   for(g in 1:n){
     log_lik[g] = bernoulli_lpmf(y[g]|p[g]);
   }
-  // p for predicted probability
 }

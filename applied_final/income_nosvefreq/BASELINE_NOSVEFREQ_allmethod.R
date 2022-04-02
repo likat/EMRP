@@ -37,14 +37,11 @@ resmatfun <- function(x, id=seq(1,ncol(x))){
 }
 
 #-- source cleaned data and group indices
-# setwd("~/Desktop/fwbb_mrp/EMRP PAPER BACKUP/realdata-output/FINALCODE_applications/")
-source("../BASELINE.R")
+source("../BASELINE_income.R")
 
 # initialize containers for results
 sim <- 5000
 staniters = 10000
-# sim <- 1000
-# staniters = 2000
 M <- length(unique(samp$sampled_x1_label))
 N <- sum(acs$perwt)
 

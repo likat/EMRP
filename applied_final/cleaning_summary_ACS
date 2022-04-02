@@ -1,0 +1,38 @@
+ACS cleaning summary
+ACS data is for NYC, collected in 2011. 
+
+n = 66246
+
+- AGE: "age3" derived from "age" variable
+	if age = "Less than 1 year old", then age3 = 1
+	if age = "90 (90+ in 1980 and 1990)", then age3 = 3
+
+- SEX: "sex2" derived from "sex" variable
+
+- RACE: "race3" derived from "race" variable
+	"race" is a variable that can take on the following values:
+		White
+		Other Asian or Pacific Islander
+		Other race, nec
+		Chinese
+		Black/Negro
+		Two major races
+		Japanese
+		American Indian or Alaskan Native
+		Three or more major races
+
+	if race = "White", race3 = 1
+	if race = "Black/Negro", race3 = 2
+	else, race3 = 3
+
+- EDUCATION: "educat4" directly derived from "educat variable"
+- INCOME: "povgap4" derived from "opmres", cutoffs following quartiles of BASELINE opmres_tc
+	if 20,000 < opmres <= 50,000, then povgap4 = 2
+	if 50,000 < opmres <= 100,000, then povgap4 = 3
+	if 100,000 < opmres, then povgap4 = 4
+
+- PERWT: Person-level weights. Sum of these are taken to be the population size N. 
+	used to create N_z/n_z initial weights for the weighted polya; i.e. for a given Z-category defined by x-tab of (age, sex, race, education, income), N_z = \sum_{i \in z} perwt_i.
+
+
+

@@ -7,23 +7,16 @@ require(foreign)
 acs   <- read.dta("acs_nyc_2011_wpov1.dta")
 baseline <- read.csv("Baseline+Public+Use.csv")
 
-## 
-
-
 set.seed(51)
 # Impute missing outcome values and education by random draw
 baseline <- baseline %>% mutate(
     # ifelse(test, yes, no)
   foodindsev = ifelse(qf2>3, sample(qf2[qf2 <=3], sum(qf2>3)), qf2),
   qi5_imp    = ifelse(qi5>8, sample(qi5[qi5<=8], sum(qi5>8)), qi5) #education
-  # famsize  = adultx + childx,
-  # opmfam = opmres_tc/famsize
-  #bestlife=ifelse(bestlife=="NA",sample(bestlife[! bestlife=="NA"], sum(bestlife=="NA")),bestlife)
 )
 
 ## Define opmres cutoffs for variable
-# opmresquant <- quantile(baseline$opmres_tc)
-# opmresquant <- c(0,20000, 50000, 100000, 200000)
+
 opmresquant <- c(0,35000, 55000, 100000)
 x1_poststratifiers <- c("age3", "sex2",  "race3","educat4", "povgap4")
 all_poststratifiers <- c(x1_poststratifiers, "svefreq2") # combinations = J_cell
@@ -57,24 +50,6 @@ pop <-
     educat4 = factor(
       educat
     ),
-    # famsize = case_when(
-    #   famsize == "1 family member present" ~ 1,
-    #   famsize == "2 family members present" ~ 2,
-    #   famsize == 3 ~ 3,
-    #   famsize == 4 ~ 4,
-    #   famsize == 5 ~ 5,
-    #   famsize == 6 ~ 6,
-    #   famsize == 7 ~ 7,
-    #   famsize == 8 ~ 8,
-    #   famsize == 9 ~ 9,
-    #   famsize == 10 ~ 10,
-    #   famsize == 11 ~ 11,
-    #   famsize == 12 ~ 12,
-    #   famsize == 13 ~ 13,
-    #   famsize == 15 ~ 15,
-    #   famsize == 16 ~ 16
-    # ),
-    # opmfam = opmres/famsize,
     povgap4 = factor(case_when(
       opmres <= opmresquant[2] ~1,
       opmres <= opmresquant[3] ~2,
@@ -124,7 +99,6 @@ samp <-
       )
     ),
     pov2 = factor(opmpov),
-    # famsize = factor(famsize),
     svefreq2 = factor(case_when(
       qc6 < 98 ~ 2,
       TRUE ~ 1
@@ -136,38 +110,6 @@ samp <-
     qweight_pu = qweight_pu
   )
 
-#--- STEPWISE SELECTION -----
-# library(MASS)
-# # Fit the full model
-# full.model <- glm(foodindsev~ (age3 + sex2 + race3 + educat4 + povgap4 + svefreq2)^2, data = samp, family = "binomial")
-# # Stepwise regression model
-# step.model <- stepAIC(full.model, scope = list(
-#   upper= ~(age3 + sex2 + race3 + educat4 + povgap4 + svefreq2)^2,
-#   lower= ~age3 + sex2 + race3 + educat4 + povgap4 + svefreq2),
-#   direction = "both", trace = FALSE)
-# summary(step.model)
-# step.modelF <- stepAIC(full.model, scope = list(
-#   upper= ~(age3 + sex2 + race3 + educat4 + povgap4 + svefreq2)^2,
-#   lower= ~age3 + sex2 + race3 + educat4 + povgap4 + svefreq2),
-#   direction = "forward", trace = FALSE)
-# summary(step.modelF)
-# step.modelB <- stepAIC(full.model, scope = list(
-#   upper= ~(age3 + sex2 + race3 + educat4 + povgap4 + svefreq2)^2,
-#   lower= ~age3 + sex2 + race3 + educat4 + povgap4 + svefreq2),
-#   direction = "backward", trace = FALSE)
-# summary(step.modelB)
-# 
-# # glmchosen <- glm(foodindsev~(age3 + sex2 + race3 + educat4 + povgap4 + svefreq2)^2,family="binomial", data = samp)
-# glmchosen <- glm(step.modelB,family="binomial", data = samp)
-# 
-# glmchosenpred <- predict.glm(glmchosen,type = "response")
-# test_roc = roc(samp$foodindsev ~ glmchosenpred, plot = TRUE, print.auc = TRUE)
-# library(pROC)
-# pROC::roc(as.numeric(samp$foodindsev)-1,glmchosenpred)
-#age:sex
-#sex:race
-#race:educat
-#povgap:svefreq
 
 #---- CREATE WEIGHTS ------
 samp_X1 <- 
@@ -186,21 +128,15 @@ wt_tbl <-
 wt_tbl$sampled_x1_label <- seq(1:nrow(wt_tbl))
 
 #---- CREATE INTERACTION TERMS ----
-#age:sex
-#sex:race
-#race:educat
-#povgap:svefreq
 
 samp_abtbl <-
   samp %>% dplyr::group_by(age3, sex2) %>% summarise(n()) %>% dplyr::select(-`n()`)
   samp_abtbl$abcat <- 1
   samp_abtbl$abcat[samp_abtbl$sex2==2] <- 1:3
-  # samp_abtbl$abcat <- 1:nrow(samp_abtbl)
 samp_bctbl <-
   samp %>% dplyr::group_by(sex2,race3) %>% summarise(n()) %>% dplyr::select(-`n()`)
   samp_bctbl$bccat <- 1
   samp_bctbl$bccat[samp_bctbl$sex2==2] <- 1:3
-  # samp_bctbl$bccat <- 1:nrow(samp_bctbl)
 samp_cdtbl <-
   samp %>% dplyr::group_by(race3,educat4) %>% summarise(n()) %>% dplyr::select(-`n()`)
   samp_cdtbl$cdcat <- 1:nrow(samp_cdtbl)
@@ -208,12 +144,8 @@ samp_dftbl <-
   samp %>% dplyr::group_by(povgap4, svefreq2) %>% summarise(n()) %>% dplyr::select(-`n()`)
   samp_dftbl$dfcat <- 1
   samp_dftbl$dfcat[samp_dftbl$svefreq2==2] <- 1:4
-  # samp_dftbl$dfcat <- 1:nrow(samp_dftbl)
 
-# samp_dftbl <- samp_dftbl[samp_dftbl$svefreq2==2,]
-# samp_dftbl$dfcat <- 1:nrow(samp_dftbl)
-
-samp <- left_join(samp, wt_tbl) %>%  
+  samp <- left_join(samp, wt_tbl) %>%  
   left_join(samp_abtbl) %>% 
   left_join(samp_dftbl) %>% 
   left_join(samp_cdtbl) %>% 
@@ -246,30 +178,7 @@ group_x1_label <- samp %>% group_by(J_cell) %>% summarise(x1lab = mean(sampled_x
 group_x1_label <- group_x1_label$x1lab
 
 
-#---- GROUP INDICATORS -----
-# suggested groups: 
-## choose a variety of small (larger diff from WFPBB) and large groups (smaller diff from WFPBB)
-#  BLACK, and LOW INCOME and LOW EDUCATION (n=202) GOOD
-#  BLACK OR OTHER, YOUNG, LOW INCOME (n=131) NOT GREAT
-#  LOW INCOME, LOW EDUCATION, YOUNG (n=31)
-#  FEMALE, BLACK, LOW INCOME (n=202)
-#  FEMALE, LOW INCOME, AGE = 2 (n=77)
-#  FEMALE, povgap = 2, age=1 (n=69 + 51 = 120)
-#age:sex
-#sex:race
-#race:educat
-#povgap:svefreq
-
-# vary n (n < 100, n > 100)
-
-# grp1: svefreq2 == 2
-# grp2: svefreq2 == 2 & povgap4 == 4
-# grp3: svefreq2 == 1 & povgap4 == 1
-# grp4: race3 == 2 & povgap4 == 1
-# grp5: sex2 == 1 & svefreq2 == 2
-# grp6: age3 == 1 & svefreq2 == 2
-# grp7: educat4 == 4 & svefreq2 == 2
-
+## Subdomain indicators
 grptbl <- samp %>% group_by(age3,sex2,race3,educat4,povgap4,svefreq2) %>% summarise(
   grp1id = mean(povgap4==1), #n=626
   grp2id = mean(povgap4 == 2), #n=79
@@ -280,14 +189,6 @@ grptbl <- samp %>% group_by(age3,sex2,race3,educat4,povgap4,svefreq2) %>% summar
   grp7id = mean(educat4 == 4)) # n=123
 grplabs <- c("<$35k", "$35k-$55k","$55k-$100k", ">$100k",
              "male","young","high educ")
-# grptbl <- samp %>% group_by(age3,sex2,race3,educat4,povgap4,svefreq2) %>% summarise(
-#   grp1id = mean(age3==1),#used
-#   grp2id = mean(educat4 %in% c(1,2)), #used
-#   grp3id = mean(povgap4==1),# used
-#   grp4id = mean(race3==2), # used
-#   grp5id = mean(povgap4 %in% c(1,2) & sex2==1),
-#   grp6id = mean(svefreq2==1),
-#   grp7id = mean(sex2==2 & svefreq2==1)) # used
 
 grp1id <- grptbl$grp1id
 grp2id <- grptbl$grp2id
@@ -297,7 +198,7 @@ grp5id <- grptbl$grp5id
 grp6id <- grptbl$grp6id
 grp7id <- grptbl$grp7id
 samp <- left_join(samp, grptbl)
-
+# write.csv(samp,"samp.csv")
 ## weighted survey estimate, no WFPBB
 ## using the person-level weights from BASELINE code, which 
 # calibrate the SRBI / Agency samples to the ACS data
@@ -354,13 +255,5 @@ svywtdres <- data.frame(
   CIupper = ciupper
 ) %>% mutate(CIlength = CIupper-CIlower)
 
-# modmain <- glm(foodindsev~age3+sex2 + race3 + educat4+ povgap4 + svefreq2, data=samp,
-#                family= binomial())
-# probraw <- predict.glm(modmain, type = "response")
-# summary(glm(foodindsev~age3+sex2 + race3 + educat4+ povgap4 + svefreq2, data=samp,
-#             family= binomial()))
-# test_roc = pROC::roc(samp$foodindsev ~as.numeric(probraw), plot = TRUE, print.auc = TRUE)
 
-
-
-write.csv(svywtdres, "svywtdres.csv")
+# write.csv(svywtdres, "svywtdres.csv")

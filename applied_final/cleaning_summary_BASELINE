@@ -1,0 +1,119 @@
+Notes for BASELINE data cleaning
+
+n=2228
+
+
+- FOODINSECURITY: "foodindsev" = binary outcome variable based on "qf2"
+	"qf2" = response to “[I / We] worried whether [my / our] food would run out before [I / we] got money to buy more.”
+	qf2 = 1 if "Often"
+	qf2 = 2 if "Sometimes"
+	qf2 = 3 if "Never"
+	qf2 = 97 if "No answer"
+	qf2 = 98 if "Don't know"
+ 	qf2 = 99 if "Refused to answer"
+
+ 	CREATING FOODINDSEV
+	if qf2 = 1 then foodindsev = 1
+	if 2 <= qf2 <= 3 then foodindsev = 0
+	if qf2 > 3 then foodindsev is determined by mode imputation (sampling randomly from sampled responses of qf2 = 1, 2, or 3)
+
+	There were 11 responses imputed by mode imputation
+	There were no missing responses to qf2.
+
+- AGE: "age3" = 3-category variable based on "qa3_age_tc"
+	"qa3_age_tc" = age of respondent
+	qa3_age_tc = 1-85 (numeric value)
+
+	CREATING AGE3
+	if qa3_age_tc <= 35 then age3 = 1
+	if 36<= qa3_age_tc <= 50 then age3 = 2
+	if 51 <= qa3_age_tc <= 85 then age3 = 3
+
+	There was no need for imputation
+	There were no missing responses to qa3_age_tc
+
+- SEX: "sex2" = 2-category variable based on "imp_female"
+	"imp_female" = imputed gender
+		imp_female = 0 if male
+		imp_female = 1 if female
+
+	CREATING SEX2
+	if imp_female = 0 then sex2 = 1
+	if imp_female = 1 then sex2 = 2
+
+	There was no need for imputation
+	There were no missing responses to imp_female
+
+- RACE: "race3" = 3-category variable based on "imp_race"
+	"imp_race" = imputedrespondent race
+		imp_race = 1 if White Non-Hispanic
+		imp_race = 2 if Black Non-Hispanic
+		imp_race = 3 if Asian Non-Hispanic
+		imp_race = 4 if Other/Multiracial
+		imp_race = 5 if Hispanic
+
+	CREATING RACE3
+	if imp_race = 1, then race3 = 1 ("White Non-Hispanic")
+	if imp_race = 2, then race3 = 2 ("Black Non-Hispanic")
+	if imp_race >= 3, then race3 = 3 ("Other")
+
+	There was no need for imputation
+	There were no missing responses to imp_race
+
+- EDUCATION: "educ4" = 4-category variable based on "qi5"
+	"qi5" = response to "What is the highest degree or grade of regular school that you have completed?"
+		qi5 = 1 if 8th grade or less
+		qi5 = 2 if Some high school
+		qi5 = 3 if High school diploma
+		qi5 = 4 if GED credential
+		qi5 = 5 if Some college or 2 year degree
+		qi5 = 6 if Vocational, technical, or trade school
+		qi5 = 7 if Bachelor's degree
+		qi5 = 8 if Graduate or professional degree
+		qi5 = 97 if No answer
+		qi5 = 98 if Don't know
+		qi5 = 99 if Refused to answer
+
+	CREATING EDUC4
+	if qi5 <= 2, then educ4 = 1 ("less than high school")
+	if 3 <= qi5 <= 4, then educ4 = 2 ("High school or equivalent")
+	if 5 <= qi5 <= 6, then educ4 = 3 ("Some college or equivalent")
+	if 7 <= qi5 <= 8, then educ4 = 4 ("Bachelor's or higher")
+	if qi5 > 8, then educ4 is determined by mode imputation.
+
+	There were 20 responses imputed by mode imputation.
+	There were no missing responses to qi5.
+
+- INCOME: "povgap4" = 4-category variable based on "opmres_tc"
+	"opmres_tc" = summation of various imputed income sources, should be consistent with OPMRES in ACS data.
+
+	CREATING POVGAP4
+	Cutoffs for povgap4 levels were defined by quartiles of "opmres_tc".
+	if opmres_tc <= 20,000, then povgap4 = 1
+	if 20,000 < opmres_tc <= 50,000, then povgap4 = 2
+	if 50,000 < opmres_tc <= 100,000, then povgap4 = 3
+	if 100,000 < opmres_tc, then povgap4 = 4
+
+	There was no need for imputation
+	There were no missing responses to opmres_tc
+
+- AGENCY VISIT FREQUENCY: "svefreq2" = 2-category variable based on "qc6"
+	"qc6" = response to "Thinking about all the types of assistance that [you / your household] received, about how often did [you / someone in your household] visit a community organization for help in the 12 months before Hurricane Sandy?"
+		qc6 = 1 if Every day, or almost every day
+		qc6 = 2 if Every week
+		qc6 = 3 if Every month
+		qc6 = 4 if Just a few times a year
+		qc6 = 5 if Less than a few times a year
+		qc6 = 6 if Only visited once
+		qc6 = 97 if No answer (no responses for this level of qc6)
+		qc6 = 98 if Don't know
+		qc6 = 99 if Refused to answer
+
+	CREATING SVEFREQ2
+	if qc6 < 98 , then svefreq2 = 1 ("Any visit") 
+	else (n=43), svefreq2 = 0 ("Don't know or no answer")
+
+	There were 1559 missing responses to qc6 due to skip logic; such respondents did not visit the agency in the past 12 months.
+
+
+	
