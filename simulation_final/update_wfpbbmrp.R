@@ -21,18 +21,17 @@ update.wfpbbmrp <- function(){
   for(s in 1:sim){
     
     #-- bootstrap resample
-    bootstrap<-BayesianBootstrap(c(1:n),1)
-    resample<-rmultinom(1,n,bootstrap)
-    bootind <- rep(1:n, resample)
-    
-    boottbl <- 
-      sampled[bootind,] %>%
+  sampled$repwts <- NULL
+  sampled$repwts <- n*normalize(BayesianBootstrap(c(1:n),1) * sampled$wts)
+    boottbl <-
+      sampled%>%
       group_by(J_cell) %>%
-      summarise(bootcts = n(), bootwts = sum(wts))
-    bootsamp_size <- nrow(boottbl)
-    wts_new <- N*normalize(boottbl$bootwts)
-    boot_cats <- boottbl$J_cell
-    
+      summarise(bootwts = sum(repwts))
+    nonzeroind <- boottbl$bootwts != 0
+    boot_cats <- boottbl$J_cell[nonzeroind]
+    wts_new <- N*normalize(boottbl$bootwts[nonzeroind])
+    bootsamp_size <- sum(nonzeroind)
+
     ## find Nj via wfpbb with the bootstrapped categories and new weights
     Nj_est <- rep(0, J)
     
@@ -55,15 +54,13 @@ update.wfpbbmrp <- function(){
     wts_mrp2 <- normalize((Nj_est*cmat2)[sampled_J])
     wts_mrp3 <- normalize((Nj_est*cmat3)[sampled_J])
     wts_mrp4 <- normalize((Nj_est*cmat4)[sampled_J])
-    wts_mrp5 <- normalize((Nj_est*cmat5)[sampled_J])
-    
+
     mrp_posterior[s] <- crossprod(wts_mrp, current_cellmean)
     mrp_posterior1[s] <- crossprod(wts_mrp1, current_cellmean)
     mrp_posterior2[s] <- crossprod(wts_mrp2, current_cellmean)
     mrp_posterior3[s] <- crossprod(wts_mrp3, current_cellmean)
     mrp_posterior4[s] <- crossprod(wts_mrp4, current_cellmean)
-    mrp_posterior5[s] <- crossprod(wts_mrp5, current_cellmean)
-    
+
     
   }
   y_bar_wmrp[i] <<- mean(mrp_posterior,na.rm=T)
@@ -71,7 +68,6 @@ update.wfpbbmrp <- function(){
   y_bar_wmrp2[i] <<- mean(mrp_posterior2,na.rm=T)
   y_bar_wmrp3[i] <<- mean(mrp_posterior3,na.rm=T)
   y_bar_wmrp4[i] <<- mean(mrp_posterior4,na.rm=T)
-  y_bar_wmrp5[i] <<- mean(mrp_posterior5,na.rm=T)
 
 
   ## collect stats from Nj
@@ -100,22 +96,17 @@ update.wfpbbmrp <- function(){
     CI_Njcov_wmrp[sampled_J] <<- CI_Njcov_wmrp[sampled_J] + ((popcts[sampled_J] >= CI_Nj_wmrp[1,]) & (popcts[sampled_J]<=CI_Nj_wmrp[2,]))
   }
   ## collect general stats
-  # CI_Nj_wmrp <<- apply(Njesttemp[,sampled_J], 2, quantile, c(0.025, 0.975), na.rm=T)
-  # CIlength_Nj_wmrp[i,sampled_J] <<- apply(CI_Nj_wmrp,2,diff)
-  # CI_Njcov_wmrp[i,sampled_J] <<- ((popcts[sampled_J] >= CI_Nj_wmrp[1,]) & (popcts[sampled_J] <= CI_Nj_wmrp[2,]))
   CI_wmrp[i,] <<- quantile(mrp_posterior, c(0.025, 0.975),na.rm=T)
   CI_wmrp1[i,] <<- quantile(mrp_posterior1, c(0.025, 0.975),na.rm=T)
   CI_wmrp2[i,] <<- quantile(mrp_posterior2, c(0.025, 0.975),na.rm=T)
   CI_wmrp3[i,] <<- quantile(mrp_posterior3, c(0.025, 0.975),na.rm=T)
   CI_wmrp4[i,] <<- quantile(mrp_posterior4, c(0.025, 0.975),na.rm=T)
-  CI_wmrp5[i,] <<- quantile(mrp_posterior5, c(0.025, 0.975),na.rm=T)
-  
+
   if(is.na(between(true_mean, CI_wmrp[i,1], CI_wmrp[i,2]))){break}
   if(between(true_mean, CI_wmrp[i,1], CI_wmrp[i,2])){CI_covered_wmrp[i] <<- 1}else if(sum(is.na(CI_wmrp[i,])!=0)){CI_covered_wmrp[i] <<- NA}else{CI_covered_wmrp[i] <<- 0}
   if(between(true_mean1, CI_wmrp1[i,1], CI_wmrp1[i,2])){CI_covered_wmrp1[i] <<- 1} else{CI_covered_wmrp1[i] <<- 0}
   if(between(true_mean2, CI_wmrp2[i,1], CI_wmrp2[i,2])){CI_covered_wmrp2[i] <<- 1} else{CI_covered_wmrp2[i] <<- 0}
   if(between(true_mean3, CI_wmrp3[i,1], CI_wmrp3[i,2])){CI_covered_wmrp3[i] <<- 1} else{CI_covered_wmrp3[i] <<- 0}
   if(between(true_mean4, CI_wmrp4[i,1], CI_wmrp4[i,2])){CI_covered_wmrp4[i] <<- 1} else{CI_covered_wmrp4[i] <<- 0}
-  if(between(true_mean5, CI_wmrp5[i,1], CI_wmrp5[i,2])){CI_covered_wmrp5[i] <<- 1} else{CI_covered_wmrp5[i] <<- 0}
-  
+
 }
