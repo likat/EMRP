@@ -56,9 +56,6 @@ wmrp_posterior1 <- rep(0, sim)
 wmrp_posterior2 <- rep(0, sim)
 wmrp_posterior3 <- rep(0, sim)
 wmrp_posterior4 <- rep(0, sim)
-# wmrp_posterior5 <- rep(0, sim)
-# wmrp_posterior6 <- rep(0, sim)
-# wmrp_posterior7 <- rep(0, sim)
 
 #== Multinomial-MRP
 mmrp_posterior <- mmrp_posterior1 <- mmrp_posterior2 <- mmrp_posterior3 <- mmrp_posterior4 <- rep(0,sim)
@@ -97,22 +94,7 @@ cdgroup <- as.numeric(grptbl$cdcat)
 dxgroup <- as.numeric(grptbl$dfcat)
 zpopcts <- grptbl$zpopcts
 
-
-# stanfitNq <- stan(file = "mrp2_Nq_BASELINE.stan",
-#                   data = c("Ma", "Mb", "Mc", "Md", "Me", "L","Mab","Mbc","Mcd", "Mdx", 
-#                            "J_stan", "n", "y", "xj",
-#                            "agroup", "bgroup", "cgroup", "dgroup", "egroup", "xgroup",
-#                            "abgroup", "bcgroup","cdgroup","dxgroup"),
-#                   iter=staniters,
-#                   #pars = c("propmk"),
-#                   warmup=staniters-sim/4,control=list(adapt_delta=0.99, max_treedepth=13),chains=4)
-# nq_pars <- 
-#   rstan::extract(stanfitNq,permuted = TRUE, inc_warmup = FALSE,include = TRUE) 
-
-# extract cell frequency estimates from MRP
-# nq_draws <- nq_pars$propmk 
 nq_draws <- readRDS("../model_fitting/nq_stan.rds")
-# saveRDS(nq_draws, "nq_stan.rds")
 #===== (1) Run multilevel regression via Stan=====
 # parameters for stan model
 Ma <- nlevels(samp$age3) # combinations of x1: age, sex, educat, povgap
@@ -150,48 +132,11 @@ grp1id <- grp1id[sort(unique(samp$J_cell))]
 grp2id <- grp2id[sort(unique(samp$J_cell))]
 grp3id <- grp3id[sort(unique(samp$J_cell))]
 grp4id <- grp4id[sort(unique(samp$J_cell))]
-# grp5id <- grp5id[sort(unique(samp$J_cell))]
-# grp6id <- grp6id[sort(unique(samp$J_cell))]
-# grp7id <- grp7id[sort(unique(samp$J_cell))]
-
-# stanfit <- stan(file = "outcome_model_BASELINE2.stan",
-#                 data = c("Ma", "Mb", "Mc", "Md", "Me", "L", "Mab", "Mbc","Mcd","Mdx",
-#                          "J_stan", "n", "y", 
-#                          "agroup", "bgroup","cgroup", "dgroup", "egroup", "xgroup", 
-#                          "abgroup", "bcgroup","cdgroup","dxgroup","cell_label"),
-#                 iter=staniters,
-#                 pars = c("cellmean","y_sim", "p", "beta","alphaa","alphac","alphad","alphae",
-#                         "alphadx",
-#                          "sigma_a","sigma_c","sigma_d","sigma_e","sigma_dx"),#"log_lik"),
-#                 warmup=staniters-sim/4,control=list(adapt_delta=0.99),chains=4)
-
-# extract estimates of cell means from the stan model
-# stanpars <-
-#   rstan::extract(object=stanfit, permuted = TRUE)#, inc_warmup = FALSE,include = TRUE)
-# cellmeans_stan <- stanpars$cellmean
-# saveRDS(stanpars, "emrp_stan.rds")
 cellmeans_stan <- readRDS("../model_fitting/emrp_stan.rds")
 cellmeans_stan <- cellmeans_stan$cellmean
-# write.csv(stanpars$y_sim, "ysimraw.csv")
-# write.csv(stanpars$p, "probraw.csv")
-# write.csv(stanpars$beta[,1], "betaintraw.csv")
-# write.csv(stanpars$beta[,2], "betasexraw.csv")
-# write.csv(stanpars$beta[,3], "betavisitraw.csv")
-# write.csv(stanpars$alphaa, "araw.csv")
-# write.csv(stanpars$alphac, "craw.csv")
-# write.csv(stanpars$alphad, "draw.csv")
-# write.csv(stanpars$alphae, "aeraw.csv")
-# write.csv(stanpars$alphadx, "dxraw.csv")
-# write.csv(stanpars$sigma_a, "sigaraw.csv")
-# write.csv(stanpars$sigma_c, "sigcraw.csv")
-# write.csv(stanpars$sigma_d, "sigdraw.csv")
-# write.csv(stanpars$sigma_e, "sigeraw.csv")
-# write.csv(stanpars$sigma_dx, "sigdxraw.csv")
 
 #===== (2) Estimate Nj via WFPBB=====
 for(s in 1:sim){
-
-  
   
   #- using complete sample
   samp$repwts <- NULL
@@ -227,18 +172,12 @@ for(s in 1:sim){
   wts_wmrp2<- normalize(wts_wmrp*grp2id)
   wts_wmrp3<- normalize(wts_wmrp*grp3id)
   wts_wmrp4<- normalize(wts_wmrp*grp4id)
-  # wts_wmrp5<- normalize(wts_wmrp*grp5id)
-  # wts_wmrp6<- normalize(wts_wmrp*grp6id)
-  # wts_wmrp7<- normalize(wts_wmrp*grp7id)
-  
+
   wmrp_posterior[s] <- crossprod(wts_wmrp, current_cellmean)
   wmrp_posterior1[s] <- crossprod(wts_wmrp1, current_cellmean)
   wmrp_posterior2[s] <- crossprod(wts_wmrp2, current_cellmean)
   wmrp_posterior3[s] <- crossprod(wts_wmrp3, current_cellmean)
   wmrp_posterior4[s] <- crossprod(wts_wmrp4, current_cellmean)
-  # wmrp_posterior5[s] <- crossprod(wts_wmrp5, current_cellmean)
-  # wmrp_posterior6[s] <- crossprod(wts_wmrp6, current_cellmean)
-  # wmrp_posterior7[s] <- crossprod(wts_wmrp7, current_cellmean)
   #************************************************************
   #-- 2-stage MRP
   mrp2_Njhatmat[s,] <- nq_draws[s,] * zpopcts
@@ -248,18 +187,12 @@ for(s in 1:sim){
   wts_mrp22 <- normalize(wts_mrp2*grp2id)
   wts_mrp23 <- normalize(wts_mrp2*grp3id)
   wts_mrp24 <- normalize(wts_mrp2*grp4id) 
-  # wts_mrp25 <- normalize(wts_mrp2*grp5id)
-  # wts_mrp26 <- normalize(wts_mrp2*grp6id) 
-  # wts_mrp27 <- normalize(wts_mrp2*grp7id)
-  
+
   mrp2_posterior[s] <- crossprod(wts_mrp2, current_cellmean)
   mrp2_posterior1[s] <- crossprod(wts_mrp21, current_cellmean)
   mrp2_posterior2[s] <- crossprod(wts_mrp22, current_cellmean)
   mrp2_posterior3[s] <- crossprod(wts_mrp23, current_cellmean)
   mrp2_posterior4[s] <- crossprod(wts_mrp24, current_cellmean)
-  # mrp2_posterior5[s] <- crossprod(wts_mrp25, current_cellmean)
-  # mrp2_posterior6[s] <- crossprod(wts_mrp26, current_cellmean)
-  # mrp2_posterior7[s] <- crossprod(wts_mrp27, current_cellmean)
   #************************************************************
   #-- Multinomial-MRP
   
@@ -274,7 +207,6 @@ for(s in 1:sim){
       probs <- fulltbl[fulltbl$sampled_x1_label==m, "prob"] %>% unlist() %>% as.double()
       popcts <- unique(fulltbl$x1popct[fulltbl$sampled_x1_label==m])
       nmk_tbl[nmk_tbl$sampled_x1_label == m, "wts"] <-
-        # rowMeans(rmultinom(popcts, 1, prob = probs))*popcts
         rmultinom(1,popcts,prob = probs)
     }
   }
@@ -285,18 +217,12 @@ for(s in 1:sim){
   wts_mmrp2<- normalize(wts_mmrp*grp2id)
   wts_mmrp3<- normalize(wts_mmrp*grp3id)
   wts_mmrp4<- normalize(wts_mmrp*grp4id)
-  # wts_mmrp5<- normalize(wts_mmrp*grp5id)
-  # wts_mmrp6<- normalize(wts_mmrp*grp6id)
-  # wts_mmrp7<- normalize(wts_mmrp*grp7id)
-  
+
   mmrp_posterior[s] <- crossprod(wts_mmrp, current_cellmean)
   mmrp_posterior1[s] <- crossprod(wts_mmrp1, current_cellmean)
   mmrp_posterior2[s] <- crossprod(wts_mmrp2, current_cellmean)
   mmrp_posterior3[s] <- crossprod(wts_mmrp3, current_cellmean)
   mmrp_posterior4[s] <- crossprod(wts_mmrp4, current_cellmean)
-  # mmrp_posterior5[s] <- crossprod(wts_mmrp5, current_cellmean)
-  # mmrp_posterior6[s] <- crossprod(wts_mmrp6, current_cellmean)
-  # mmrp_posterior7[s] <- crossprod(wts_mmrp7, current_cellmean)
   print(s)
 }
 
