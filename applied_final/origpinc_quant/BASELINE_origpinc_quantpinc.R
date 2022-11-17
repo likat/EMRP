@@ -7,12 +7,12 @@ require(foreign)
 library(survey)
 acs   <- read.dta("../data/acs_nyc_2011_wpov1.dta")
 baseline <- read.csv("../data/Baseline+Public+Use.csv")
-type = "visitor"
+type = "origpinc_quantpinc"
 
 set.seed(51)
 # Impute missing outcome values and education by random draw
 baseline <- baseline %>% mutate(
-  # ifelse(test, yes, no)
+    # ifelse(test, yes, no)
   foodindsev = ifelse(qf2>3, sample(qf2[qf2 <=3], sum(qf2>3)), qf2),
   qi5_imp    = ifelse(qi5>8, sample(qi5[qi5<=8], sum(qi5>8)), qi5) #education
 )
@@ -73,14 +73,14 @@ samp <-
   baseline %>% 
   transmute(
     age3 = factor(case_when(
-      qa3_age_tc <= 35 ~1,
-      qa3_age_tc <= 50 ~2,
-      TRUE ~ 3
+        qa3_age_tc <= 35 ~1,
+        qa3_age_tc <= 50 ~2,
+        TRUE ~ 3
     )),
     sex2 = factor(case_when(
       imp_female== 0 ~ 1,
       imp_female== 1 ~ 2
-    )),
+      )),
     race3 = factor(case_when(
       imp_race==1 ~ 1,
       imp_race == 2 ~ 2,
@@ -133,26 +133,26 @@ wt_tbl$sampled_x1_label <- seq(1:nrow(wt_tbl))
 
 samp_abtbl <-
   samp %>% dplyr::group_by(age3, sex2) %>% summarise(n()) %>% dplyr::select(-`n()`)
-samp_abtbl$abcat <- 1
-samp_abtbl$abcat[samp_abtbl$sex2==2] <- 1:3
+  samp_abtbl$abcat <- 1
+  samp_abtbl$abcat[samp_abtbl$sex2==2] <- 1:3
 samp_bctbl <-
   samp %>% dplyr::group_by(sex2,race3) %>% summarise(n()) %>% dplyr::select(-`n()`)
-samp_bctbl$bccat <- 1
-samp_bctbl$bccat[samp_bctbl$sex2==2] <- 1:3
+  samp_bctbl$bccat <- 1
+  samp_bctbl$bccat[samp_bctbl$sex2==2] <- 1:3
 samp_cdtbl <-
   samp %>% dplyr::group_by(race3,educat4) %>% summarise(n()) %>% dplyr::select(-`n()`)
-samp_cdtbl$cdcat <- 1:nrow(samp_cdtbl)
+  samp_cdtbl$cdcat <- 1:nrow(samp_cdtbl)
 samp_dftbl <-
   samp %>% dplyr::group_by(povgap4, svefreq2) %>% summarise(n()) %>% dplyr::select(-`n()`)
-samp_dftbl$dfcat <- 1
-samp_dftbl$dfcat[samp_dftbl$svefreq2==2] <- 1:4
+  samp_dftbl$dfcat <- 1
+  samp_dftbl$dfcat[samp_dftbl$svefreq2==2] <- 1:4
 
-samp <- left_join(samp, wt_tbl) %>%  
+  samp <- left_join(samp, wt_tbl) %>%  
   left_join(samp_abtbl) %>% 
   left_join(samp_dftbl) %>% 
   left_join(samp_cdtbl) %>% 
   left_join(samp_bctbl)
-
+  
 samp$abcat[is.na(samp$abcat)] <- nrow(samp_abtbl)+1
 samp$bccat[is.na(samp$bccat)] <- nrow(samp_bctbl)+1
 samp$cdcat[is.na(samp$cdcat)] <- nrow(samp_cdtbl)+1
@@ -210,19 +210,38 @@ exp(ci_mody)
 modymrp <- svyglm(foodindsev ~age3 + sex2 + race3 + educat4 + povgap4, design = sampdes, family="binomial")
 summary(modymrp)
 
-grptbl <- samp %>% group_by(age3,sex2,race3,educat4,povgap4,svefreq2) %>% summarise(
-  grp1id = mean(svefreq2 == 2), #visitor n=626
-  grp2id = mean(svefreq2 == 1 & povgap4 == 1), #poor nonvis n=324
-  grp3id = mean(sex2 == 1 & svefreq2 == 2), # male vis n=218
-  grp4id = mean(educat4 == 4 & svefreq2 == 2)) # highed vis n=123
-grplabs <- c("visitor", "poor non-visitor", "male visitor", "educated visitor")
+set.seed(2)
+grp1cells <- c(grptbl$J_cell[grptbl$pinc_est <= quantpinc[2] & grptbl$svefreq2==1], # 40 and under
+               sample( grptbl$J_cell[grptbl$pinc_est <= quantpinc[2] & grptbl$svefreq2==2], size=20)) 
+grp2cells <- c(grptbl$J_cell[grptbl$pinc_est > quantpinc[2] & grptbl$pinc_est <= quantpinc[3] & grptbl$svefreq2==1], # (40-70)
+               sample( grptbl$J_cell[grptbl$pinc_est > quantpinc[2] & grptbl$pinc_est <= quantpinc[3] & grptbl$svefreq2==2], size=20))
+grp3cells <- c(grptbl$J_cell[grptbl$pinc_est > quantpinc[3] & grptbl$pinc_est <= quantpinc[4]& grptbl$svefreq2==1], # (70-90)
+               sample(grptbl$J_cell[grptbl$pinc_est > quantpinc[3] & grptbl$pinc_est <= quantpinc[4]& grptbl$svefreq2==2], size=20))# indices 396,285
+grp4cells <- c(grptbl$J_cell[grptbl$pinc_est > quantpinc[4] & grptbl$svefreq2==2], # (80 and above)
+               sample(grptbl$J_cell[grptbl$pinc_est > quantpinc[4] & grptbl$svefreq2==1], size = 20))# index 9e-04
+
+# grp1cells <- grptbl$J_cell[grptbl$pinc_est < quantpinc[5] & grptbl$povgap4==4]
+# grp2cells <- grptbl$J_cell[grptbl$pinc_est >= quantpinc[5] & grptbl$pinc_est<quantpinc[9] & grptbl$povgap4==4] # 25 to 50, indices 124,224 on grptbl
+# grp3cells <- grptbl$J_cell[grptbl$pinc_est >= quantpinc[6] & grptbl$povgap4==4] # indices 396,285
+# grp4cells <- grptbl$J_cell[grptbl$povgap4==4] # index 9e-04
+## Subdomain indicators
+grptbl$grp1id <- as.numeric(grptbl$J_cell %in% grp1cells)
+grptbl$grp2id <- as.numeric(grptbl$J_cell%in% grp2cells)
+grptbl$grp3id <- as.numeric(grptbl$J_cell %in% grp3cells)
+grptbl$grp4id <- as.numeric(grptbl$J_cell%in% grp4cells)
+
 grp1id <- grptbl$grp1id
 grp2id <- grptbl$grp2id
 grp3id <- grptbl$grp3id
 grp4id <- grptbl$grp4id
+samp$grp1id <- samp$grp2id <- samp$grp3id <- samp$grp4id <- NULL
+saveRDS(grptbl, "grptbl_quantpinc.rds")
 samp <- left_join(samp, grptbl)
-
 # write.csv(samp,"samp.csv")
+summary(glm(svefreq2~ grp1id, data=grptbl, family="binomial"))
+summary(glm(svefreq2~ grp2id, data=grptbl, family="binomial"))
+summary(glm(svefreq2~ grp3id, data=grptbl, family="binomial"))
+summary(glm(svefreq2~ grp4id, data=grptbl, family="binomial"))
 ## using the person-level weights from BASELINE code, which 
 # calibrate the SRBI / Agency samples to the ACS data
 res.table.foodindsev <- function(des){
@@ -235,7 +254,7 @@ res.table.foodindsev <- function(des){
   res2 <- svymean(~foodindsev2, sub2)
   res3 <- svymean(~foodindsev2, sub3)
   res4 <- svymean(~foodindsev2, sub4)
-  
+
   ciall <- confint(resall)
   ci1 <- confint(res1)
   ci2 <- confint(res2)

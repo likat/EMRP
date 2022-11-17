@@ -9,7 +9,7 @@ require(polyapost)
 require(LaplacesDemon)
 
 #-- source cleaned data and group indices
-type = "visitor"
+type = "origpinc_quantpinc"
 source(paste0("BASELINE_", type, ".R"))
 N <- sum(acs$perwt)
 M <- length(unique(samp$sampled_x1_label))
