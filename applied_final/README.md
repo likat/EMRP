@@ -6,7 +6,7 @@ Code for EMRP analyses applied to the Longitudinal Study for Wellbeing (LSW). If
 2. For analysis set one (using estimated inclusion probabilities), run all "analysis_*" codes in "origpinc_quant/".
 3. For analysis set two (using sociodemographic-visitor subgroups), run all "analysis_*" codes in "visitor/".
 
-The comprehensive description of this repository:
+**A comprehensive description of this repository**:
 
  * "data/" contains data from the ACS-NYC 2011 and the baseline survey
  	- "Baseline+Public+Use.csv" is the LSW public-use code.
