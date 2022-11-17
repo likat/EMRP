@@ -4,8 +4,8 @@ Multilevel Regression and Poststratification (MRP) is a powerful method used in 
 
 EMRP estimators fit the same outcome model (Y|Z,X) to derive $\hat{\theta}_j$, but use different methods to estimate $\hat{N}_j$. We consider these three:
 
- - WFPBB-MRP: use the weighted finite population Bayesian bootstrap (WFPBB) with weights constructed from cross-tabs of $Z$
- - Multinomial-MRP: use draws from the multinomial distribution using observed cell frequencies
- - Two-stage MRP: fit a $X|Z$ model and apply the estimated probabilities to observed $Z$ cross-tabs.
+ - **WFPBB-MRP**: use the weighted finite population Bayesian bootstrap (WFPBB) with weights constructed from cross-tabs of $Z$
+ - **Multinomial-MRP**: use draws from the multinomial distribution using observed cell frequencies
+ - **Two-stage MRP**: fit a $X|Z$ model and apply the estimated probabilities to observed $Z$ cross-tabs.
  
-We publish the code used to generate the results in our paper, ``Embedded Multilevel Regression and Poststratification: Model-based Inference with Incomplete Auxiliary Information" (under review) in this repository. 
+We publish the code used to generate the results in our paper, *Embedded Multilevel Regression and Poststratification: Model-based Inference with Incomplete Auxiliary Information* (under review) in this repository. 
