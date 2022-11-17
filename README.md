@@ -1,6 +1,6 @@
 # Embedded Multilevel Regression and Poststratification
 
-Multilevel Regression and Poststratification (MRP) is a powerful method used in small area estimation known for its stabilizing and bias reduction properties. However, the structure of its multilevel model is constrained by availability of the population distribution of poststratifying variables, which are often derived from auxiliary data such as a census. Embedded-MRP is a class of methods that "embed" the estimation of the population distribution of unavailable predictive variables (which we term $X$) in the MRP workflow using information from fully observed poststratifying variables ($Z$). We have a total of $J$ unique cells constructed by combinations of $(Z,X).
+Multilevel Regression and Poststratification (MRP) is a powerful method used in small area estimation known for its stabilizing and bias reduction properties. However, the structure of its multilevel model is constrained by availability of the population distribution of poststratifying variables, which are often derived from auxiliary data such as a census. Embedded-MRP is a class of methods that "embed" the estimation of the population distribution of unavailable predictive variables (which we term $X$) in the MRP workflow using information from fully observed poststratifying variables ($Z$). We have a total of $J$ unique cells constructed by combinations of $(Z,X)$.
 
 EMRP estimators fit the same outcome model (Y|Z,X) to derive $\hat{\theta}_j$, but use different methods to estimate $\hat{N}_j$. We consider these three:
 
