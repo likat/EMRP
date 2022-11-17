@@ -37,37 +37,13 @@ resmatfun <- function(x, id=seq(1,ncol(x))){
 }
 
 #-- source cleaned data and group indices
-source("../BASELINE_income.R")
+source("BASELINE_origpinc_quantpinc.R")
 
 # initialize containers for results
 sim <- 5000
 staniters = 10000
 M <- length(unique(samp$sampled_x1_label))
 N <- sum(acs$perwt)
-
-#== redefine groupids in terms of Z
-x1tbl <- samp %>% group_by(J_cell) %>% summarise(z = mean(sampled_x1_label))
-
-grp1z <-grp2z <- grp3z <- grp4z <- grp5z <- grp6z<- grp7z <- rep(0,M)
-grp1z[unique(x1tbl$z[grp1id==1])] <- 1
-grp2z[unique(x1tbl$z[grp2id==1])] <- 1
-grp3z[unique(x1tbl$z[grp3id==1])] <- 1
-grp4z[unique(x1tbl$z[grp4id==1])] <- 1
-grp5z[unique(x1tbl$z[grp5id==1])] <- 1
-grp6z[unique(x1tbl$z[grp6id==1])] <- 1
-grp7z[unique(x1tbl$z[grp7id==1])] <- 1
-
-#== MRP
-wmrp_posterior <- rep(0,sim)
-wmrp_posterior1 <- rep(0, sim)
-wmrp_posterior2 <- rep(0, sim)
-wmrp_posterior3 <- rep(0, sim)
-wmrp_posterior4 <- rep(0, sim)
-wmrp_posterior5 <- rep(0, sim)
-wmrp_posterior6 <- rep(0, sim)
-wmrp_posterior7 <- rep(0, sim)
-
-
 
 #===== (1) Run multilevel regression via Stan=====
 # parameters for stan model
@@ -110,40 +86,7 @@ stanfit <- stan(file = "outcome_model_BASELINE.stan",
                 iter=staniters,
                 warmup=staniters-sim/4,control=list(adapt_delta=0.99),chains=4)
 
-# extract estimates of cell means from the stan model
+# extract and save estimates of cell means from the stan model
 stanpars <-
   rstan::extract(object=stanfit, permuted = TRUE)
-cellmeans_stan <- stanpars$cellmean
-write.csv(stanpars, "mrppars.csv")
-wts_wmrp <- normalize(zpopcts)
-wts_wmrp1<- normalize(wts_wmrp*grp1z)
-wts_wmrp2<- normalize(wts_wmrp*grp2z)
-wts_wmrp3<- normalize(wts_wmrp*grp3z)
-wts_wmrp4<- normalize(wts_wmrp*grp4z)
-wts_wmrp5<- normalize(wts_wmrp*grp5z)
-wts_wmrp6<- normalize(wts_wmrp*grp6z)
-wts_wmrp7<- normalize(wts_wmrp*grp7z)
-
-#===== (2) PS estimator =====
-for(s in 1:sim){
-  
-  current_cellmean <- cellmeans_stan[s,]
-  wmrp_posterior[s] <- crossprod(wts_wmrp, current_cellmean)
-  wmrp_posterior1[s] <- crossprod(wts_wmrp1, current_cellmean)
-  wmrp_posterior2[s] <- crossprod(wts_wmrp2, current_cellmean)
-  wmrp_posterior3[s] <- crossprod(wts_wmrp3, current_cellmean)
-  wmrp_posterior4[s] <- crossprod(wts_wmrp4, current_cellmean)
-  wmrp_posterior5[s] <- crossprod(wts_wmrp5, current_cellmean)
-  wmrp_posterior6[s] <- crossprod(wts_wmrp6, current_cellmean)
-  wmrp_posterior7[s] <- crossprod(wts_wmrp7, current_cellmean)
-  #************************************************************
-  
-  print(s)
-}
-
-#-- (4) Print results
-resmatid <- c("Overall", "Group 1", "Group 2", "Group 3", "Group 4", "Group 5", "Group 6", "Group 7")
-allgrp_wmrp <- cbind(wmrp_posterior, wmrp_posterior1, wmrp_posterior2, wmrp_posterior3, wmrp_posterior4, wmrp_posterior5, wmrp_posterior6, wmrp_posterior7)
-
-resmat_wmrp <- resmatfun(allgrp_wmrp,resmatid)
-write.csv(resmat_wmrp, "BASELINE_mrp.csv")
+saveRDS(stanpars, "mrppars.rds")
