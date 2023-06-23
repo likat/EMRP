@@ -1,11 +1,12 @@
 ##################
 # MAIN CODE BODY #
 ##################
-## Main effects in the X-Z relationship
-type = "main"
+## Interaction terms in the X-Z relationship
+type = "zonly"
 options(mc.cores =2)
 # Libraries -------
 library(dplyr)
+library(stringr)
 require(rstan)
 require(polyapost)
 require(LaplacesDemon)

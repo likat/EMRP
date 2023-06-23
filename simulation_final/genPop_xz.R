@@ -205,13 +205,19 @@ cmat3[group3] <- 1
 cmat4[group4] <- 1
 cmat5[group5] <- 1
 
- cmat1z <-cmat2z <- cmat3z <- cmat4z <- cmat5z <- rep(0,Zcat)
- cmat1z[unique(popcts_tl$zcategorical[group1])] <- 1
- cmat2z[unique(popcts_tl$zcategorical[group2])] <- 1
- cmat3z[unique(popcts_tl$zcategorical[group3])] <- 1
- cmat4z[unique(popcts_tl$zcategorical[group4])] <- 1
- cmat5z[unique(popcts_tl$zcategorical[group5])] <- 1
-# 
+cmat1z <-cmat2z <- cmat3z <- cmat4z <- cmat5z <- rep(0,Zcat)
+cmat1z[unique(popcts_tl$zcategorical[group1])] <- 1
+cmat2z[unique(popcts_tl$zcategorical[group2])] <- 1
+cmat3z[unique(popcts_tl$zcategorical[group3])] <- 1
+cmat4z[unique(popcts_tl$zcategorical[group4])] <- 1
+cmat5z[unique(popcts_tl$zcategorical[group5])] <- 1
+
+df$grp1id <- as.numeric(df$J_cell %in% group1)
+df$grp2id <- as.numeric(df$J_cell %in% group2)
+df$grp3id <- as.numeric(df$J_cell %in% group3)
+df$grp4id <- as.numeric(df$J_cell %in% group4)
+
+ # 
 # sampcat_groupings <- list(group1, group2, group3, group4, group5)
 # df$subgroup <- 0
 # for(i in 1:5){
@@ -262,7 +268,8 @@ cmat5[group5] <- 1
 df <- df %>%
   dplyr::select(
     Z_categorical,Za_categorical,Zb_categorical,Zc_categorical,pxz,
-    p_include, X.1, Y, J_cell, zcts, Nj
+    p_include, X.1, Y, J_cell, zcts, Nj,
+    grp1id, grp2id,grp3id,grp4id
   )
 summary(glm(X.1 ~ Zb_categorical*Zc_categorical + Za_categorical*Zc_categorical, data=df, family = "binomial"))
 # mod1 <- glm(X.1 ~ Zb_categorical*Zc_categorical + Za_categorical*Zc_categorical, data=samp, family = "binomial")

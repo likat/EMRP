@@ -103,18 +103,20 @@ bxzb <- c(2.3, 1.5, 0.15, 0.2, 0.9)
 bxzc <- c(0,-1)
 # bxzac = c(0, rnorm(acats-1) - 0.2) 
 # bxzbc = c(0, rnorm(bcats-1) + 0.2) 
-# bxzac = c(0, -0.6, 0.5, 0.35, -0.4) 
-# bxzbc = c(0, 1.7, 0.1, 2, -0.75)
+bxzac = c(0, -0.6, 0.5, 0.35, -0.4) 
+bxzbc = c(0, 1.7, 0.1, 2, -0.75)
 
-bxzac <- rep(0, acats) #MAIN
-bxzbc <- rep(0,bcats)  #MAIN
+# bxzac <- rep(0, acats) #MAIN
+# bxzbc <- rep(0,bcats)  #MAIN
 
 df <-
   df %>% 
   left_join(tempdf)
 df$pxz <-  expit(bxz0+bxza[df$Za_categorical] +
                    bxzb[df$Zb_categorical] +
-                   bxzc[df$Zc_categorical])
+                   bxzc[df$Zc_categorical] +
+                   bxzac[df$Za_categorical]*as.numeric(df$Zc_categorical==2)+
+                   bxzbc[df$Zb_categorical]*as.numeric(df$Zc_categorical==2))
 df$X.0 = rbinom(N, 1, 1-df$pxz)
 df$X.1 = as.numeric(df$X.0 != 1)
 
@@ -146,7 +148,7 @@ poptbl <- df %>%
   group_by(J_cell) %>% 
   summarise(pinc = mean(p_include), cts = n(), cellmeans = mean(Y), cellvars = var(Y))
 
-# order subgroups by theoretical sampled cell count
+# order subgroups by theoretical inclusion probability
 temp <- poptbl$pinc 
 ordered_groupcts <- order(temp)
 ordered_cellcts_hihi <- ordered_groupcts
@@ -176,40 +178,55 @@ grpincr <- ceiling(J/5)
 # group4 <- c(nonZccells[45:49],Zccells[17:31])
 # group5 <- c(nonZccells[50],Zccells[32:50])
 
-# ordered by pinclude, X = 0
+# ordered by pinclude, X = 1
 pool10 <- ordered_groupcts[1:(2*grpincr)][ordered_groupcts[1:(2*grpincr)] %% 2 ==0 ]
 pool20 <- ordered_groupcts[(grpincr+1):(3*grpincr)][ordered_groupcts[(grpincr+1):(3*grpincr)] %% 2 ==0 ]
 pool30 <- ordered_groupcts[(2*grpincr+1):(4*grpincr)][ordered_groupcts[(2*grpincr+1):(4*grpincr)] %% 2 ==0 ]
 pool40 <- ordered_groupcts[(3*grpincr+1):(5*grpincr)][ordered_groupcts[(3*grpincr+1):(5*grpincr)] %% 2 ==0]
 # pool50 <- ordered_groupcts[(4*grpincr+1):J][ordered_groupcts[(4*grpincr+1):J] %% 2 ==0]
 
-# ordered by pinclude, X = 1
+# ordered by pinclude, X = 0
 pool11 <- ordered_groupcts[1:(2*grpincr)][ordered_groupcts[1:(2*grpincr)] %% 2 ==1 ]
 pool21 <- ordered_groupcts[(grpincr+1):(3*grpincr)][ordered_groupcts[(grpincr+1):(3*grpincr)] %% 2 ==1 ]
 pool31 <- ordered_groupcts[(2*grpincr+1):(4*grpincr)][ordered_groupcts[(2*grpincr+1):(4*grpincr)] %% 2 ==1 ]
 pool41 <- ordered_groupcts[(3*grpincr+1):(5*grpincr)][ordered_groupcts[(3*grpincr+1):(5*grpincr)] %% 2 ==1]
 # pool51 <- ordered_groupcts[(4*grpincr+1):J][ordered_groupcts[(4*grpincr+1):J] %% 2 ==1]
 
-group1 <- c(sample(pool10,5), sample(pool11,15))
-group2 <- c(sample(pool20,5), sample(pool21,15))
-group3 <- c(sample(pool30,15), sample(pool31,5))
-group4 <- c(sample(pool40,5), sample(pool41,15))
-group5 <- c(sample(pool40,15), sample(pool41,5))
+# group1 <- c(sample(pool10,5), sample(pool11,15))
+# group2 <- c(sample(pool20,5), sample(pool21,15))
+# group3 <- c(sample(pool30,15), sample(pool31,5))
+# group4 <- c(sample(pool40,5), sample(pool41,15))
+group1 <- sample(c(pool10),size=10)
+group2 <- sample(c(pool20),size=10)
+group3 <- sample(c(pool30),size=10)
+group4 <- sample(c(pool40),size=10)
+
+group1 <- poptbl$J_cell[poptbl$zcategorical %in% poptbl$zcategorical[group1]]
+group2 <- poptbl$J_cell[poptbl$zcategorical %in% poptbl$zcategorical[group2]]
+group3 <- poptbl$J_cell[poptbl$zcategorical %in% poptbl$zcategorical[group3]]
+group4 <- poptbl$J_cell[poptbl$zcategorical %in% poptbl$zcategorical[group4]]
+# group5 <- c(sample(pool40,15), sample(pool41,5))
 
 cmat1 <-cmat2 <- cmat3 <- cmat4 <- cmat5 <- rep(0,J)
 cmat1[group1] <- 1
 cmat2[group2] <- 1
 cmat3[group3] <- 1
 cmat4[group4] <- 1
-cmat5[group5] <- 1
+# cmat5[group5] <- 1
 
- cmat1z <-cmat2z <- cmat3z <- cmat4z <- cmat5z <- rep(0,Zcat)
- cmat1z[unique(popcts_tl$zcategorical[group1])] <- 1
- cmat2z[unique(popcts_tl$zcategorical[group2])] <- 1
- cmat3z[unique(popcts_tl$zcategorical[group3])] <- 1
- cmat4z[unique(popcts_tl$zcategorical[group4])] <- 1
- cmat5z[unique(popcts_tl$zcategorical[group5])] <- 1
-# 
+cmat1z <-cmat2z <- cmat3z <- cmat4z <- cmat5z <- rep(0,Zcat)
+cmat1z[unique(popcts_tl$zcategorical[group1])] <- 1
+cmat2z[unique(popcts_tl$zcategorical[group2])] <- 1
+cmat3z[unique(popcts_tl$zcategorical[group3])] <- 1
+cmat4z[unique(popcts_tl$zcategorical[group4])] <- 1
+# cmat5z[unique(popcts_tl$zcategorical[group5])] <- 1
+
+df$grp1id <- as.numeric(df$J_cell %in% group1)
+df$grp2id <- as.numeric(df$J_cell %in% group2)
+df$grp3id <- as.numeric(df$J_cell %in% group3)
+df$grp4id <- as.numeric(df$J_cell %in% group4)
+
+ # 
 # sampcat_groupings <- list(group1, group2, group3, group4, group5)
 # df$subgroup <- 0
 # for(i in 1:5){
@@ -217,6 +234,7 @@ cmat5[group5] <- 1
 # }
 
 
+# ordered_cellcts_hihi <- order(poptbl$sampct)
 # poptbl <- df %>%
 #   group_by(J_cell,subgroup) %>%
 #   summarise(
@@ -259,9 +277,10 @@ cmat5[group5] <- 1
 df <- df %>%
   dplyr::select(
     Z_categorical,Za_categorical,Zb_categorical,Zc_categorical,pxz,
-    p_include, X.1, Y, J_cell, zcts, Nj
+    p_include, X.1, Y, J_cell, zcts, Nj,
+    grp1id, grp2id,grp3id,grp4id
   )
-# summary(glm(X.1 ~ Zb_categorical*Zc_categorical + Za_categorical*Zc_categorical, data=df, family = "binomial"))
+summary(glm(X.1 ~ Zb_categorical*Zc_categorical + Za_categorical*Zc_categorical, data=df, family = "binomial"))
 # mod1 <- glm(X.1 ~ Zb_categorical*Zc_categorical + Za_categorical*Zc_categorical, data=samp, family = "binomial")
 # pred1 <- predict.glm(mod1,newdata=df,type="response")
 # mod2 <- glm(X.1 ~ Za_categorical + Zb_categorical + Zc_categorical, data=samp, family = "binomial")
