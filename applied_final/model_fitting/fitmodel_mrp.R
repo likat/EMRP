@@ -37,8 +37,8 @@ resmatfun <- function(x, id=seq(1,ncol(x))){
 }
 
 #-- source cleaned data and group indices
-source("BASELINE_origpinc_quantpinc.R")
-
+source("BASELINE_income_visitor.R")
+comptime <- 0
 # initialize containers for results
 sim <- 5000
 staniters = 10000
@@ -78,6 +78,7 @@ cdgroup <- as.numeric(grptbl$cdcat)
 cell_label <- samp$sampled_x1_label
 zpopcts <- grptbl$zcts
 
+t0<- Sys.time()
 stanfit <- stan(file = "outcome_model_BASELINE.stan",
                 data = c("Ma", "Mb", "Mc", "Md", "Me", "L", "Mab","Mbc","Mcd",
                          "J_stan", "n", "y", 
@@ -85,8 +86,9 @@ stanfit <- stan(file = "outcome_model_BASELINE.stan",
                          "abgroup","bcgroup","cdgroup","cell_label"),
                 iter=staniters,
                 warmup=staniters-sim/4,control=list(adapt_delta=0.99),chains=4)
-
+t1 <- Sys.time()
 # extract and save estimates of cell means from the stan model
 stanpars <-
   rstan::extract(object=stanfit, permuted = TRUE)
 saveRDS(stanpars, "mrppars.rds")
+saveRDS(t1-t0, "comptime_mrp.rds")

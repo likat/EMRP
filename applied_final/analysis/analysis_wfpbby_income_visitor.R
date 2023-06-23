@@ -9,7 +9,7 @@ require(polyapost)
 require(LaplacesDemon)
 
 #-- source cleaned data and group indices
-type = "visitor"
+type = "income_visitor"
 source(paste0("BASELINE_", type, ".R"))
 N <- sum(acs$perwt)
 M <- length(unique(samp$sampled_x1_label))
@@ -53,6 +53,12 @@ ybar1 <- rep(0, L) # group 1
 ybar2 <- rep(0, L) # group 2
 ybar3 <- rep(0, L) # group 3
 ybar4 <- rep(0, L) # group 4
+ybar5 <- rep(0, L) # group 1
+ybar6 <- rep(0, L) # group 2
+ybar7 <- rep(0, L) # group 3
+ybar8 <- rep(0, L) # group 4
+ybar9 <- rep(0, L) # group 3
+ybar10 <- rep(0, L) # group 4
 
 
 #----- BEGIN SIMULATIONS ----
@@ -69,7 +75,8 @@ for(l in 1:L){
   samp$repwts <- n*normalize(BayesianBootstrap(c(1:n),1))*samp$wts
   boottbl <- 
     samp %>%
-    group_by(foodindsev,J_cell, grp1id, grp2id, grp3id, grp4id) %>%
+    group_by(foodindsev,J_cell, grp1id, grp2id, grp3id, grp4id, grp5id, grp6id, grp7id, grp8id,
+             grp9id, grp10id) %>%
     summarise(bootwts = sum(repwts))
   boottbl <- boottbl[boottbl$bootwts !=0,]
   wts_new <- (n*Tfact)*normalize(boottbl$bootwts)
@@ -77,7 +84,7 @@ for(l in 1:L){
   boot_cats <- 1:bootsamp_size
   
   ## (2) WFPBB with new weights and unique indices
-  bbmean <- bbmean1 <- bbmean2 <- bbmean3 <- bbmean4  <- 0
+  bbmean <- bbmean1 <- bbmean2 <- bbmean3 <- bbmean4  <- bbmean5 <- bbmean6 <- bbmean7 <- bbmean8  <- bbmean9 <- bbmean10 <- 0
   
   for(f in 1:F_draw){
     # fpbb_temp <- wtpolyap(ysamp = boot_cats, wts = twt, k = (n*Tfact)-bootsamp_size)
@@ -89,6 +96,13 @@ for(l in 1:L){
     bbmean2 <- bbmean2 + mean(synthpop$foodindsev[synthpop$grp2id ==1])/F_draw
     bbmean3 <- bbmean3 + mean(synthpop$foodindsev[synthpop$grp3id ==1])/F_draw
     bbmean4 <- bbmean4 + mean(synthpop$foodindsev[synthpop$grp4id ==1])/F_draw
+	bbmean5 <- bbmean5 + mean(synthpop$foodindsev[synthpop$grp5id ==1])/F_draw
+    bbmean6 <- bbmean6 + mean(synthpop$foodindsev[synthpop$grp6id ==1])/F_draw
+    bbmean7 <- bbmean7 + mean(synthpop$foodindsev[synthpop$grp7id ==1])/F_draw
+    bbmean8 <- bbmean8 + mean(synthpop$foodindsev[synthpop$grp8id ==1])/F_draw
+    bbmean9 <- bbmean9 + mean(synthpop$foodindsev[synthpop$grp9id ==1])/F_draw
+    bbmean10 <- bbmean10 + mean(synthpop$foodindsev[synthpop$grp10id ==1])/F_draw
+    
   }
   
   ybar[l] <- mean(bbmean)
@@ -96,10 +110,17 @@ for(l in 1:L){
   ybar2[l] <- mean(bbmean2)
   ybar3[l] <- mean(bbmean3)
   ybar4[l] <- mean(bbmean4)
+  ybar5[l] <- mean(bbmean5)
+  ybar6[l] <- mean(bbmean6)
+  ybar7[l] <- mean(bbmean7)
+  ybar8[l] <- mean(bbmean8)
+  ybar9[l] <- mean(bbmean9)
+  ybar10[l] <- mean(bbmean10)
 }  
 #-- (4) Print results
-resmatid <- c("Overall","Group 1","Group 2","Group 3","Group 4")
+resmatid <- c("Overall",grplabs)
 
-allgrp_wfpbby <- cbind(ybar, ybar1, ybar2, ybar3, ybar4)
+allgrp_wfpbby <- cbind(ybar, ybar1, ybar2, ybar3, ybar4,
+ybar5, ybar6, ybar7, ybar8,ybar9, ybar10)
 resmat_wfpbby <- resmatfun(allgrp_wfpbby,id = resmatid)
 write.csv(resmat_wfpbby, paste0("results/BASELINE_", type,"_wfpbby.csv"))

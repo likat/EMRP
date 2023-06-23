@@ -6,7 +6,7 @@
 ### Code for reworking results with different cmat but after we have already fitted the model
 
 set.seed(51)
-options(mc.cores = 4)
+#options(mc.cores = 4)
 #-- load required packages
 require(dplyr)
 require(foreign)
@@ -38,7 +38,7 @@ resmatfun <- function(x, id=seq(1,ncol(x))){
 }
 
 #-- source cleaned data and group indices
-type = "origpinc_quantpinc" 
+type = "income" 
 source(paste0("BASELINE_", type, ".R"))
 
 # initialize containers for results
@@ -117,7 +117,7 @@ zpopcts <- grptbl$zcts
 #   rstan::extract(object=stanfit, permuted = TRUE)
 # saveRDS(stanpars, "mrppars.rds")
 # cellmeans_stan <- stanpars$cellmean
-cellmeans_stan <- readRDS("../model_fitting/mrppars.rds")
+cellmeans_stan <- readRDS("mrppars.rds")
 cellmeans_stan <- cellmeans_stan$cellmean
 # write.csv(stanpars, "mrppars.csv")
 wts_wmrp <- normalize(zpopcts)

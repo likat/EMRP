@@ -7,7 +7,7 @@ require(foreign)
 library(survey)
 acs   <- read.dta("../data/acs_nyc_2011_wpov1.dta")
 baseline <- read.csv("../data/Baseline+Public+Use.csv")
-type = "visitor"
+type = "income_visitor"
 
 set.seed(51)
 # Impute missing outcome values and education by random draw
@@ -202,60 +202,121 @@ sampdes <- svydesign(ids=~0, weights=~qweight_pu, data=samp)
 
 modxz <- svyglm(svefreq2 ~( age3 + sex2 + race3 + educat4 + povgap4)^2, design = sampdes, family="binomial")
 summary(modxz)
-mody <- svyglm(foodindsev ~svefreq2+ svefreq2*povgap4+age3 + sex2 + race3 + educat4 + povgap4, design = sampdes, family="binomial")
+# mody <- svyglm(foodindsev ~svefreq2+ svefreq2*povgap4+age3 + sex2 + race3 + educat4 + povgap4, design = sampdes, family="binomial")
+mody <- glm(foodindsev ~svefreq2+ svefreq2*povgap4+age3 + sex2 + race3 + educat4 + povgap4, data=samp,  family="binomial")
+
 summary(mody)
-ci_mody <- confint(mody, method="Wald")
-exp(ci_mody)
+
+
 ## 
-modymrp <- svyglm(foodindsev ~age3 + sex2 + race3 + educat4 + povgap4, design = sampdes, family="binomial")
+# modymrp <- svyglm(foodindsev ~age3 + sex2 + race3 + educat4 + povgap4, design = sampdes, family="binomial")
+modymrp <- glm(foodindsev ~age3 + sex2 + race3 + educat4 + povgap4, data=samp, family="binomial")
 summary(modymrp)
 
+pred_mody <- predict.glm(mody,type = "response")
+pred_modymrp <- predict.glm(modymrp,type = "response")
+pROC::auc(samp$foodindsev, pred_mody)
+pROC::auc(samp$foodindsev, pred_modymrp)
+# 0,35000, 55000, 100000
+
 grptbl <- samp %>% group_by(age3,sex2,race3,educat4,povgap4,svefreq2) %>% summarise(
-  grp1id = mean(svefreq2 == 2), #visitor n=626
-  grp2id = mean(svefreq2 == 1 & povgap4 == 1), #poor nonvis n=324
-  grp3id = mean(sex2 == 1 & svefreq2 == 2), # male vis n=218
-  grp4id = mean(educat4 == 4 & svefreq2 == 2)) # highed vis n=123
-grplabs <- c("visitor", "poor non-visitor", "male visitor", "educated visitor")
+  grp1id = mean(povgap4==1 & svefreq2 == 1),
+  grp2id = mean(povgap4==2& svefreq2 == 1), 
+  grp3id = mean(povgap4==3& svefreq2 == 1), 
+  grp4id = mean(povgap4==4& svefreq2 == 1),
+  grp5id = mean(povgap4==1 & svefreq2 == 2),
+  grp6id = mean(povgap4==2& svefreq2 == 2), 
+  grp7id = mean(povgap4==3& svefreq2 == 2), 
+  grp8id = mean(povgap4==4& svefreq2 == 2),
+  grp9id = mean(svefreq2 == 1),
+  grp10id = mean(svefreq2 == 2)
+  ) 
+grplabs <- c("<$35k, nonvisitor", "$35-55k, nonvisitor", "$55-100k, nonvisitor", ">$100k, nonvisitor",
+             "<$35k, visitor", "$35-55k, visitor", "$55-100k, visitor", ">$100k, visitor", "nonvisitor", "visitor")
 grp1id <- grptbl$grp1id
 grp2id <- grptbl$grp2id
 grp3id <- grptbl$grp3id
 grp4id <- grptbl$grp4id
+grp5id <- grptbl$grp5id
+grp6id <- grptbl$grp6id
+grp7id <- grptbl$grp7id
+grp8id <- grptbl$grp8id
+grp9id <- grptbl$grp9id
+grp10id <- grptbl$grp10id
+
 samp <- left_join(samp, grptbl)
 
 # write.csv(samp,"samp.csv")
 ## using the person-level weights from BASELINE code, which 
 # calibrate the SRBI / Agency samples to the ACS data
+
 res.table.foodindsev <- function(des){
   sub1 <- subset(des,grp1id==1)
   sub2 <- subset(des,grp2id==1)
   sub3 <- subset(des,grp3id==1)
   sub4 <- subset(des,grp4id==1)
+  sub5 <- subset(des,grp5id==1)
+  sub6 <- subset(des,grp6id==1)
+  sub7 <- subset(des,grp7id==1)
+  sub8 <- subset(des,grp8id==1)
+  sub9 <- subset(des,grp9id==1)
+  sub10 <- subset(des,grp10id==1)
+  
   resall <- svymean(~foodindsev2, des)
   res1 <- svymean(~foodindsev2, sub1)
   res2 <- svymean(~foodindsev2, sub2)
   res3 <- svymean(~foodindsev2, sub3)
   res4 <- svymean(~foodindsev2, sub4)
+  res5 <- svymean(~foodindsev2, sub5)
+  res6 <- svymean(~foodindsev2, sub6)
+  res7 <- svymean(~foodindsev2, sub7)
+  res8 <- svymean(~foodindsev2, sub8)
+  res9 <- svymean(~foodindsev2, sub9)
+  res10 <- svymean(~foodindsev2, sub10)
   
-  ciall <- confint(resall)
-  ci1 <- confint(res1)
-  ci2 <- confint(res2)
-  ci3 <- confint(res3)
-  ci4 <- confint(res4)
+  ciall <- svyciprop(~foodindsev2, des,method="logit")
+  ci1 <- svyciprop(~foodindsev2, sub1, method = "logit")
+  ci2 <- svyciprop(~foodindsev2, sub2, method = "logit")
+  ci3 <- svyciprop(~foodindsev2, sub3, method = "logit")
+  ci4 <- svyciprop(~foodindsev2, sub4, method = "logit")
+  ci5 <- svyciprop(~foodindsev2, sub5, method = "logit")
+  ci6 <- svyciprop(~foodindsev2, sub6, method = "logit")
+  ci7 <- svyciprop(~foodindsev2, sub7, method = "logit")
+  ci8 <- svyciprop(~foodindsev2, sub8, method = "logit")
+  ci9 <- svyciprop(~foodindsev2, sub9, method = "logit")
+  ci10 <- svyciprop(~foodindsev2, sub10, method = "logit")
+  # ci1 <- svyciprop(res1)
+  # ci2 <- svyciprop(res2)
+  # ci3 <- svyciprop(res3)
+  # ci4 <- svyciprop(res4)
+  # ci5 <- svyciprop(res5)
+  # ci6 <- svyciprop(res6)
+  # ci7 <- svyciprop(res7)
+  # ci8 <- svyciprop(res8)
+  # ci9 <- svyciprop(res9)
+  # ci10 <- svyciprop(res10)
   # ciall <- attributes(svyciprop(~I(foodindsev2==1), des, method = "logit"))$ci
   # ci1 <- attributes(svyciprop(~I(foodindsev2==1), sub1, method = "logit"))$ci
   # ci2 <- attributes(svyciprop(~I(foodindsev2==1), sub2, method = "logit"))$ci
   # ci3 <- attributes(svyciprop(~I(foodindsev2==1), sub3, method = "logit"))$ci
   # ci4 <- attributes(svyciprop(~I(foodindsev2==1), sub4, method = "logit"))$ci
-  resmat <- data.frame(mean = c(resall,res1,res2,res3,res4),
-                       SE = c(SE(resall),SE(res1), SE(res2), SE(res3), SE(res4)),
-                       row.names=c("overall", "1","2","3","4"))
-  CImat <- matrix(nrow = 5,ncol=2)
-  CImat[1,] <- ciall
-  CImat[2,] <- ci1
-  CImat[3,] <- ci2
-  CImat[4,] <- ci3
-  CImat[5,] <- ci4
-  
+  resmat <- data.frame(mean = c(resall,res1,res2,res3,res4,
+                                res5, res6, res7,res8, res9, res10),
+                       SE = c(SE(resall),SE(res1), SE(res2), SE(res3), SE(res4),
+                              SE(res5), SE(res6), SE(res7), SE(res8), SE(res9), SE(res10)),
+                       row.names=c("overall",grplabs))
+  CImat <- matrix(nrow = 1+length(grplabs),ncol=2)
+  CImat[1,] <- confint(ciall)
+  CImat[2,] <- confint(ci1)
+  CImat[3,] <- confint(ci2)
+  CImat[4,] <- confint(ci3)
+  CImat[5,] <- confint(ci4)
+  CImat[6,] <- confint(ci5)
+  CImat[7,] <- confint(ci6)
+  CImat[8,] <- confint(ci7)
+  CImat[9,] <- confint(ci8)
+  CImat[10,] <- confint(ci9)
+  CImat[11,] <- confint(ci10)
   return(list(resmat*100, CImat))
 }
 samp$foodindsev2 <- as.numeric(samp$foodindsev)-1
@@ -265,12 +326,12 @@ wtdes_person <- svydesign(ids=~0, weights =~qweight_pu, data = samp)
 # wtdes_person <- svydesign(ids=~0, weights =~wts, data = samp)
 unwtdres <- res.table.foodindsev(unwtdes)
 wtdres_person <- res.table.foodindsev(wtdes_person)
-sum(samp$grp1id)
-sum(samp$grp2id)
-sum(samp$grp3id)
-sum(samp$grp4id)
-
-unwtdres;wtdres_person
+# sum(samp$grp1id)
+# sum(samp$grp2id)
+# sum(samp$grp3id)
+# sum(samp$grp4id)
+# 
+# unwtdres;wtdres_person
 saveRDS(unwtdres, paste0("results/res_", type, "_unwtd.rds"))
 saveRDS(wtdres_person, paste0("results/res_", type, "_wtd.rds"))
 # table(grptbl$svefreq2[grptbl$grp1id==1])
@@ -278,17 +339,17 @@ saveRDS(wtdres_person, paste0("results/res_", type, "_wtd.rds"))
 # table(grptbl$svefreq2[grptbl$grp3id==1])
 # table(grptbl$svefreq2[grptbl$grp4id==1])
 # 
-cattbl <- tableone::CreateCatTable(data=samp, vars = c("age3", "sex2","race3","educat4","povgap4","svefreq2"))
-print(cattbl, format = 'p', quote=T, cramVars=c("sex2", "svefreq2"))
-
-cattbl1 <- tableone::CreateCatTable(data=samp[samp$grp1id==1,], vars = c("age3", "sex2","race3","educat4","povgap4","svefreq2"))
-print(cattbl1, format = 'p', quote=T, cramVars=c("sex2", "svefreq2"))
-
-cattbl2 <- tableone::CreateCatTable(data=samp[samp$grp2id==1,], vars = c("age3", "sex2","race3","educat4","povgap4","svefreq2"))
-print(cattbl2, format = 'p', quote=T, cramVars=c("sex2", "svefreq2"))
-
-cattbl3 <- tableone::CreateCatTable(data=samp[samp$grp3id==1,], vars = c("age3", "sex2","race3","educat4","povgap4","svefreq2"))
-print(cattbl3, format = 'p', quote=T, cramVars=c("sex2", "svefreq2"))
-cattbl4 <- tableone::CreateCatTable(data=samp[samp$grp4id==1,], vars = c("age3", "sex2","race3","educat4","povgap4","svefreq2"))
-print(cattbl4, format = 'p', quote=T, cramVars=c("sex2", "svefreq2"))
+# cattbl <- tableone::CreateCatTable(data=samp, vars = c("age3", "sex2","race3","educat4","povgap4","svefreq2"))
+# print(cattbl, format = 'p', quote=T, cramVars=c("sex2", "svefreq2"))
+# 
+# cattbl1 <- tableone::CreateCatTable(data=samp[samp$grp1id==1,], vars = c("age3", "sex2","race3","educat4","povgap4","svefreq2"))
+# print(cattbl1, format = 'p', quote=T, cramVars=c("sex2", "svefreq2"))
+# 
+# cattbl2 <- tableone::CreateCatTable(data=samp[samp$grp2id==1,], vars = c("age3", "sex2","race3","educat4","povgap4","svefreq2"))
+# print(cattbl2, format = 'p', quote=T, cramVars=c("sex2", "svefreq2"))
+# 
+# cattbl3 <- tableone::CreateCatTable(data=samp[samp$grp3id==1,], vars = c("age3", "sex2","race3","educat4","povgap4","svefreq2"))
+# print(cattbl3, format = 'p', quote=T, cramVars=c("sex2", "svefreq2"))
+# cattbl4 <- tableone::CreateCatTable(data=samp[samp$grp4id==1,], vars = c("age3", "sex2","race3","educat4","povgap4","svefreq2"))
+# print(cattbl4, format = 'p', quote=T, cramVars=c("sex2", "svefreq2"))
 # 

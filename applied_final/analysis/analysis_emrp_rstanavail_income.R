@@ -4,9 +4,9 @@
 #-- uses public use baseline data
 
 ### Code for reworking results with different cmat but after we have already fitted the model
-type = "visitor"
+type = "income"
 set.seed(51)
-options(mc.cores = 4)
+# options(mc.cores = 4)
 #-- load required packages
 require(dplyr)
 require(foreign)
@@ -94,7 +94,7 @@ cdgroup <- as.numeric(grptbl$cdcat)
 dxgroup <- as.numeric(grptbl$dfcat)
 zpopcts <- grptbl$zpopcts
 
-nq_draws <- readRDS("../model_fitting/nq_stan.rds")
+nq_draws <- readRDS("nq_stan.rds")
 #===== (1) Run multilevel regression via Stan=====
 # parameters for stan model
 Ma <- nlevels(samp$age3) # combinations of x1: age, sex, educat, povgap
@@ -132,7 +132,7 @@ grp1id <- grp1id[sort(unique(samp$J_cell))]
 grp2id <- grp2id[sort(unique(samp$J_cell))]
 grp3id <- grp3id[sort(unique(samp$J_cell))]
 grp4id <- grp4id[sort(unique(samp$J_cell))]
-cellmeans_stan <- readRDS("../model_fitting/emrp_stan.rds")
+cellmeans_stan <- readRDS("emrp_stan.rds")
 cellmeans_stan <- cellmeans_stan$cellmean
 
 #===== (2) Estimate Nj via WFPBB=====

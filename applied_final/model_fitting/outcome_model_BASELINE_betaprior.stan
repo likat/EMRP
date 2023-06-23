@@ -23,7 +23,9 @@ data{
 } 
 
 parameters{
-  vector[2] beta; //int, sex
+  // vector[2] beta; //int, sex
+  real b0;
+  real bb;
   vector[Ma] az;
   vector[Mc] cz;
   vector[Md] dz;
@@ -32,6 +34,8 @@ parameters{
   real<lower=0> sigma_c; //sd of C main effect
   real<lower=0> sigma_d; //sd of D main effect
   real<lower=0> sigma_e; //sd of E main effect
+    real<lower=0> sigma_beta0; 
+  real<lower=0> sigma_betab; 
 }
 
 transformed parameters{
@@ -39,10 +43,15 @@ transformed parameters{
   vector[Mc] alphac= cz*sigma_c; 
   vector[Md] alphad= dz*sigma_d; 
   vector[Me] alphae= ez*sigma_e;
-  vector[J_stan] cellmean =  inv_logit(beta[1] + beta[2]*bgroup + alphaa[agroup] + alphac[cgroup] + alphad[dgroup]+ alphae[egroup] );
+  real beta0 = b0*sigma_beta0;
+  real betab = bb*sigma_betab;
+  // vector[J_stan] cellmean =  inv_logit(beta[1] + beta[2]*bgroup + alphaa[agroup] + alphac[cgroup] + alphad[dgroup]+ alphae[egroup] );
+    vector[J_stan] cellmean =  inv_logit(beta0 + betab*bgroup + alphaa[agroup] + alphac[cgroup] + alphad[dgroup]+ alphae[egroup] );
 }
  
 model{
+  b0 ~ std_normal();
+  bb ~ std_normal();
   az ~ std_normal();
   cz~ std_normal();
   dz~ std_normal();
@@ -51,6 +60,8 @@ model{
   sigma_c ~ cauchy(0,1);
   sigma_d ~ cauchy(0,1);
   sigma_e ~ cauchy(0,1);
+  sigma_beta0 ~ cauchy(0,5);
+  sigma_betab ~ cauchy(0,5);
     y ~ bernoulli(cellmean[cell_label]);
 }
 

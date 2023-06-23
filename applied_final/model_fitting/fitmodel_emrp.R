@@ -37,8 +37,9 @@ resmatfun <- function(x, id=seq(1,ncol(x))){
 }
 
 #-- source cleaned data and group indices
-source("BASELINE_origpinc_quantpinc.R")
-
+source("BASELINE_income_visitor.R")
+comptime <- 0
+comptime_nj <- 0
 # initialize containers for results
 sim <- 5000
 staniters = 10000
@@ -93,7 +94,7 @@ cdgroup <- as.numeric(grptbl$cdcat)
 dxgroup <- as.numeric(grptbl$dfcat)
 zpopcts <- grptbl$zpopcts
 
-
+t0nj <- Sys.time()
 stanfitNq <- stan(file = "mrp2_Nq_BASELINE.stan",
                   data = c("Ma", "Mb", "Mc", "Md", "Me", "L","Mab","Mbc","Mcd", "Mdx", 
                            "J_stan", "n", "y", "xj",
@@ -102,12 +103,13 @@ stanfitNq <- stan(file = "mrp2_Nq_BASELINE.stan",
                   iter=staniters,
                   #pars = c("propmk"),
                   warmup=staniters-sim/4,control=list(adapt_delta=0.99, max_treedepth=13),chains=4)
-nq_pars <- 
-  rstan::extract(stanfitNq,permuted = TRUE, inc_warmup = FALSE,include = TRUE) 
-
-# extract cell frequency estimates from MRP
-nq_draws <- nq_pars$propmk 
-saveRDS(nq_draws, "nq_stan.rds")
+t1nj <- Sys.time()
+# nq_pars <-
+#   rstan::extract(stanfitNq,permuted = TRUE, inc_warmup = FALSE,include = TRUE)
+# 
+# # extract cell frequency estimates from MRP
+# nq_draws <- nq_pars$propmk
+# saveRDS(nq_draws, "nq_stan.rds")
 #===== (1) Run multilevel regression via Stan=====
 # parameters for stan model
 Ma <- nlevels(samp$age3) # combinations of x1: age, sex, educat, povgap
@@ -145,7 +147,7 @@ grp1id <- grp1id[sort(unique(samp$J_cell))]
 grp2id <- grp2id[sort(unique(samp$J_cell))]
 grp3id <- grp3id[sort(unique(samp$J_cell))]
 grp4id <- grp4id[sort(unique(samp$J_cell))]
-
+t0 <- Sys.time()
 stanfit <- stan(file = "outcome_model_BASELINE2.stan",
                 data = c("Ma", "Mb", "Mc", "Md", "Me", "L", "Mab", "Mbc","Mcd","Mdx",
                          "J_stan", "n", "y", 
@@ -156,9 +158,11 @@ stanfit <- stan(file = "outcome_model_BASELINE2.stan",
                         "alphadx",
                          "sigma_a","sigma_c","sigma_d","sigma_e","sigma_dx"),#"log_lik"),
                 warmup=staniters-sim/4,control=list(adapt_delta=0.99),chains=4)
-
+t1 <- Sys.time()
 # extract estimates of cell means from the stan model
 stanpars <-
   rstan::extract(object=stanfit, permuted = TRUE)#, inc_warmup = FALSE,include = TRUE)
 cellmeans_stan <- stanpars$cellmean
 saveRDS(stanpars, "emrp_stan.rds")
+saveRDS(t1-t0, "comptime_emrp.rds")
+saveRDS(t1nj-t0nj, "comptime_nj.rds")
