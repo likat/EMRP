@@ -3,8 +3,8 @@
 This is code for the EMRP analyses applied to the Longitudinal Study for Wellbeing (LSW). If you are reproducing the results from the paper, please create a "results/" folder after pulling the repo and run the code in the following order:
 
 1. Run "model_fitting/fitmodel_emrp.R" and "model_fitting/fitmodel_mrp.R" code to obtain ".rds" files from the model fit. These files will be used in the analyses later.
-2. For analysis set one (using income subdomains), run all "analysis_*" codes in "analysis/*_income".
-3. For analysis set two (using income-visitor subdomains), run all "analysis_*" codes in "analysis/*_income_visitor".
+2. For analysis set one (using income subdomains), run all "analysis_\*" codes in "analysis/\*_income".
+3. For analysis set two (using income-visitor subdomains), run all "analysis_\*" codes in "analysis/\*_income_visitor".
 
 ## Documentation
 
