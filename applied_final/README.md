@@ -2,6 +2,7 @@
 
 This is code for the EMRP analyses applied to the Longitudinal Study for Wellbeing (LSW). If you are reproducing the results from the paper, please create a "results/" folder after pulling the repo and run the code in the following order:
 
+0. Download the LSW data [here](https://www.povertycenter.columbia.edu/poverty-tracker-data). Save this file ("Baseline+Public+Use.csv") in the **"data/"** folder.
 1. Run "model_fitting/fitmodel_emrp.R" and "model_fitting/fitmodel_mrp.R" code to obtain ".rds" files from the model fit. These files will be used in the analyses later.
 2. For analysis set one (using income subdomains), run all "analysis_\*" codes in "analysis/\*_income".
 3. For analysis set two (using income-visitor subdomains), run all "analysis_\*" codes in "analysis/\*_income_visitor".
@@ -9,7 +10,7 @@ This is code for the EMRP analyses applied to the Longitudinal Study for Wellbei
 ## Documentation
 
  * **"data/"** contains data from the ACS-NYC 2011 and the baseline survey
- 	- "Baseline+Public+Use.csv" is the LSW public-use code.
+ 	- "Baseline+Public+Use.csv" is the LSW public-use data.
 	- "acs_nyc_2011_wpov1.dta" is the ACS data that we use to derive population characteristics (Z).
  * **"loo/"** contains code for doing leave-one-out diagnostics.
  * **"model_fitting/"** includes code used for fitting the EMRP outcome model (Y|Z,X), MRP outcome model (Y|Z), and the (X|Z) model for two-stage MRP.
